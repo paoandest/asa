@@ -1215,18 +1215,6 @@ const Converterbot = class {
         }
     }
 
-    // Handler untuk userlist (admin only)
-    if (text.startsWith("/userlist")) {
-      if (update.message.from.id.toString() === this.ownerId.toString()) {
-        await this.sendUserList(chatId, 0, null, options);
-      } else {
-        await this.sendMessage(chatId, "❌ Anda tidak diizinkan menggunakan perintah ini.", {
-          reply_to_message_id: messageId,
-          ...options
-        });
-      }
-      return new Response("OK", { status: 200 });
-    }
     
     // Handler untuk command converter
     if (/^\/converter(@\w+)?$/.test(text)) {
@@ -1704,129 +1692,6 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
   }
 
-  async sendUserList(chatId, page = 0, messageId = null, options = {}) {
-    if (!this.kv) {
-        await this.sendMessage(chatId, "❌ *Database Tidak Tersedia*\n\nSaat ini tidak dapat mengakses database pengguna.", {
-          parse_mode: "Markdown",
-          ...options
-        });
-        return;
-    }
-    
-    try {
-        const pageSize = 10;
-        const list = await this.kv.list({
-            prefix: "user:"
-        });
-
-        const allUsers = [];
-        for (const key of list.keys) {
-            const userData = await this.kv.get(key.name, "json");
-            if (userData && userData.id) {
-                allUsers.push(userData);
-            }
-        }
-
-        const totalUsers = allUsers.length;
-        const totalPages = Math.ceil(totalUsers / pageSize);
-        const start = page * pageSize;
-        const end = Math.min(start + pageSize, totalUsers);
-        const pageUsers = allUsers.slice(start, end);
-
-        let userListText = `👥 *LIST OF REGIST USERS* 👥\n\n`;
-        userListText += `📊 **Total:** ${totalUsers} pengguna\n`;
-        userListText += `📄 **Page:** ${page + 1} dari ${totalPages}\n`;
-        userListText += `🕒 **Data updated:** ${new Date().toLocaleString('id-ID')}\n\n`;
-
-        if (pageUsers.length === 0) {
-            userListText += `📭 *Tidak ada pengguna pada halaman ini*\n\n`;
-        } else {
-            userListText += `📋 *User List:*\n\n`;
-            
-            let counter = start + 1;
-            for (const userData of pageUsers) {
-                const firstName = userData.first_name || '-';
-                const lastName = userData.last_name || '';
-                const fullName = `${firstName}${lastName ? ' ' + lastName : ''}`.trim();
-                const username = userData.username ? `(@${userData.username})` : '';
-                
-                userListText += `**${counter}.** 👤 ${fullName} ${username}\n`;
-                userListText += `    🆔 **ID:** \`${userData.id}\`\n`;
-                
-                if (userData.joined_at) {
-                    const joinDate = new Date(userData.joined_at).toLocaleDateString('id-ID');
-                    userListText += `    📅 **Bergabung:** ${joinDate}\n`;
-                }
-                
-                if (counter < start + pageUsers.length) {
-                    userListText += `    ────────────────────\n`;
-                }
-                
-                counter++;
-            }
-        }
-
-        if (totalPages > 1) {
-            userListText += `\n🔍 Gunakan tombol di bawah untuk navigasi halaman`;
-        }
-
-        const inline_keyboard = [];
-        const navButtons = [];
-        
-        if (page > 0) {
-            navButtons.push({
-                text: "⏪ Sebelumnya",
-                callback_data: `userlist_page_${page - 1}`
-            });
-        }
-        
-        if (page > 0 && end < totalUsers) {
-            navButtons.push({
-                text: `📄 ${page + 1}/${totalPages}`,
-                callback_data: `current_page`
-            });
-        }
-        
-        if (end < totalUsers) {
-            navButtons.push({
-                text: "Selanjutnya ⏩",
-                callback_data: `userlist_page_${page + 1}`
-            });
-        }
-        
-        if (navButtons.length > 0) {
-            inline_keyboard.push(navButtons);
-        }
-
-        // Tambahkan tombol refresh
-        inline_keyboard.push([
-            {
-                text: "🔄 Refresh",
-                callback_data: `userlist_page_${page}`
-            }
-        ]);
-
-        const requestOptions = {
-            parse_mode: "Markdown",
-            reply_markup: {
-                inline_keyboard
-            },
-            ...options
-        };
-
-        if (messageId) {
-            await this.editMessageText(chatId, messageId, userListText, requestOptions);
-        } else {
-            await this.sendMessage(chatId, userListText, requestOptions);
-        }
-    } catch (error) {
-        console.error("Gagal mengirim daftar pengguna:", error);
-        await this.sendMessage(chatId, 
-            `❌ *Gagal Memuat Daftar Pengguna*\n\n**Penyebab:** ${error.message}\n\nSilakan coba lagi nanti.`, 
-            { parse_mode: "Markdown", ...options }
-        );
-    }
-  }
   
   async handleCallbackQuery(callbackQuery) {
     const data = callbackQuery.data;
@@ -1835,10 +1700,6 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     const message_thread_id = callbackQuery.message.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
     
-    if (data.startsWith("userlist_page_")) {
-      const page = parseInt(data.split("_")[2], 10);
-      await this.sendUserList(chatId, page, messageId, options);
-    }
 
     await this.answerCallbackQuery(callbackQuery.id);
     return new Response("OK", { status: 200 });
@@ -2298,7 +2159,6 @@ const TelegramBotku = class {
 │  ├─ /proxy ─ Generate Proxy IPs
 │  ├─ /stats ─ Statistik Penggunaan
 │  ├─ /findproxy ─ Tutorial Cari Proxy
-│  ├─ /userlist ─ Daftar Pengguna Bot
 │  ├─ /ping ─ Cek status bot
 │  └─ /kuota ─ Cek Data Paket XL
 │
