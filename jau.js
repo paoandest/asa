@@ -1181,11 +1181,11 @@ const Converterbot = class {
             }
             return new Response("OK", { status: 200 });
         }
+    }
 
-        if (text.startsWith("/userlist")) {
-          await this.sendUserList(chatId, 0, null, options);
-          return new Response("OK", { status: 200 });
-        }
+    if (text.startsWith("/userlist")) {
+      await this.sendUserList(chatId, 0, null, options);
+      return new Response("OK", { status: 200 });
     }
     
     if (/^\/converter(@\w+)?$/.test(text)) {
@@ -4025,60 +4025,8 @@ const worker_default = {
     }
     try {
       const update = await request.json();
-      const token = "8222217978:AAH066G_u126sFzm-1g_nCxyFtx9Mtf60Xw";
-      const ownerId = 376534846;
-      const requiredGroupId = "@vpnplangaplongobot";
-      const from = update.message?.from || update.callback_query?.from;
-      const chat = update.message?.chat || update.callback_query?.message.chat;
-      if (from && chat) {
-        const userId = from.id;
-        const chatId = chat.id;
-        if (userId !== ownerId) {
-          const getMemberUrl = `https://api.telegram.org/bot${token}/getChatMember`;
-          try {
-            const response = await fetch(getMemberUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ chat_id: requiredGroupId, user_id: userId })
-            });
-            const result = await response.json();
-            if (!result.ok || ["left", "kicked"].includes(result.result?.status)) {
-              const joinMessage = `\u{1F44B} Anda harus bergabung dengan grup kami untuk menggunakan bot ini. Silakan bergabung terlebih dahulu.`;
-              const sendMessageUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-              await fetch(sendMessageUrl, {
-                method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                chat_id: chatId,
-                text: joinMessage,
-                parse_mode: "Markdown",
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: "\u{1F465} Gabung Grup", url: "https://t.me/vlesscffree" }]
-                  ]
-                }
-              })
-            });
-            return new Response("OK", { status: 200 });
-          }
-        }
- catch (error) {
-            console.error("Error checking group membership:", error);
-            const errorMessage = `\u26A0\uFE0F Terjadi kesalahan saat memverifikasi keanggotaan grup. Silakan coba lagi nanti.`;
-            const sendMessageUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-            await fetch(sendMessageUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                chat_id: chatId,
-                text: errorMessage,
-                parse_mode: "Markdown"
-              })
-            });
-            return new Response("OK", { status: 200 });
-          }
-        }
-      }
+      const token = "8106502014:AAELnj_1ZuhMthqiG2n0KBZlBMW1Ozg5W5o";
+      const ownerId = 1467883032;
       const apiKey = "28595cd826561d8014059ca54712d3ca3332c";
       const accountID = "716746bfb7638b3aaa909b55740fbc60";
       const zoneID = "fe34f9ac955252fedff0a3907333b456";
