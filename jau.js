@@ -1090,7 +1090,7 @@ const Converterbot = class {
     this.token = token;
     this.apiUrl = apiUrl || "https://api.telegram.org";
     this.ownerId = ownerId;
-    this.kv = env.geovpn_db;
+    this.kv = env.GEO_DB;
   }
 
   // Format pesan broadcast yang lebih menarik
@@ -1943,6 +1943,19 @@ const TelegramBotku = class {
     });
     return response.json();
   }
+  async getChatMember(chatId, userId) {
+    const url = `${this.apiUrl}/bot${this.token}/getChatMember`;
+    const body = {
+      chat_id: chatId,
+      user_id: userId
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
   async handleUpdate(update) {
     const message_thread_id = update.message?.message_thread_id || update.callback_query?.message?.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
@@ -1962,7 +1975,7 @@ const TelegramBotku = class {
     if (/^\/menu(@\w+)?$/.test(text)) {
   const menuText = `
   
-╭─── • 𝗚𝗘𝗢 𝗕𝗢𝗧 𝗦𝗘𝗥𝗩𝗘𝗥 • ───╮
+╭─ • 𝗚𝗘𝗢 𝗕𝗢𝗧 𝗦𝗘𝗥𝗩𝗘𝗥 • ─╮
 │
 ├─ 🌟 *Fitur Utama*
 │  ├─ /proxyip ─ Config acak by Flag
@@ -1990,7 +2003,7 @@ const TelegramBotku = class {
 ├─ ❤️ *Dukungan*
 │  └─ /donate ─ Bantu Kopi Admin
 │
-╰─── •「 @sampiiiiu 」• ───╯
+╰─ •「 @sampiiiiu 」• ─╯
 
 `;
 
@@ -2224,10 +2237,15 @@ _— Tim GEO BOT SERVER_
 }
     
 if (/^\/start(@\w+)?$/.test(text)) {
-      const imageUrl = "https://github.com/jaka8m/BOT-CONVERTER/raw/main/start.png";
+      const userId = update.message.from.id;
+      const groupId = "@auto_sc";
       try {
-        await this.sendPhoto(chatId, imageUrl, {
-          caption: `
+        const member = await this.getChatMember(groupId, userId);
+        if (member.ok && (member.result.status === "member" || member.result.status === "administrator" || member.result.status === "creator")) {
+          const imageUrl = "https://github.com/jaka8m/BOT-CONVERTER/raw/main/start.png";
+          try {
+            await this.sendPhoto(chatId, imageUrl, {
+              caption: `
 ═════════════════
 ≡             𝕻𝖍𝖗𝖊𝖆𝖐𝖊𝖗                ≡
 ═════════════════
@@ -2249,17 +2267,31 @@ if (/^\/start(@\w+)?$/.test(text)) {
 📺 [CHANNEL VPS & Script VPS](https://t.me/testikuy_mang)
 👥 [Phreaker GROUP](https://t.me/+Q1ARd8ZsAuM2xB6-)
 ═════════════════
-        `.trim(),
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "📢 GEO PROJECT", url: "https://t.me/sampiiiiu" }]
-            ]
-          },
-          ...options
-        });
+            `.trim(),
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: "📢 GEO PROJECT", url: "https://t.me/sampiiiiu" }]
+                ]
+              },
+              ...options
+            });
+          } catch (error) {
+            console.error(error);
+          }
+        } else {
+          await this.sendMessage(chatId, "Anda harus bergabung dengan grup untuk menggunakan bot ini.", {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "Gabung Grup", url: "https://t.me/auto_sc" }]
+              ]
+            },
+            ...options
+          });
+        }
       } catch (error) {
-        console.error(error);
+        console.error("Error checking group membership:", error);
+        await this.sendMessage(chatId, "Terjadi kesalahan saat memeriksa keanggotaan grup.", options);
       }
       return new Response("OK", { status: 200 });
     }
@@ -4025,7 +4057,7 @@ const worker_default = {
     }
     try {
       const update = await request.json();
-      const token = "8106502014:AAELnj_1ZuhMthqiG2n0KBZlBMW1Ozg5W5o";
+      const token = "7664381872:AAFBZquRrIqh7jALwv6-hkcb-ZXMrjqLMB0";
       const ownerId = 1467883032;
       const apiKey = "28595cd826561d8014059ca54712d3ca3332c";
       const accountID = "716746bfb7638b3aaa909b55740fbc60";
