@@ -1094,7 +1094,7 @@ const Converterbot = class {
     this.groupId = -1002042632790;
   }
 
-  // Format pesan broadcast yang lebih menarik
+  // Format pesan broadcast yang lebih menarik dengan styling premium
   formatBroadcastMessage(message, type = 'text') {
     const timestamp = new Date().toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -1105,29 +1105,56 @@ const Converterbot = class {
       minute: '2-digit'
     });
 
-    const footer = `\n\n───────────────\n🕒 ${timestamp}\n_• Pesan resmi dari admin •_`;
+    const footer = `\n\n════════════════════════\n🕒 ${timestamp}\n_• 📨 Pesan resmi dari admin •_`;
 
-    // Styling berdasarkan tipe konten
+    // Styling premium berdasarkan tipe konten
     let styledMessage = message;
-    if (type === 'text') {
-      styledMessage = `📢 *BROADCAST* 📢\n\n${message}`;
-    } else if (type === 'photo') {
-      styledMessage = `🖼️ *GALERI UPDATE* 🖼️\n\n${message}`;
-    } else if (type === 'video') {
-      styledMessage = `🎥 *VIDEO UPDATE* 🎥\n\n${message}`;
-    }
+    const styles = {
+      text: {
+        icon: "📢",
+        title: "BROADCAST MESSAGE"
+      },
+      photo: {
+        icon: "🖼️",
+        title: "GALERI UPDATE"
+      },
+      video: {
+        icon: "🎥",
+        title: "VIDEO UPDATE"
+      }
+    };
+
+    const style = styles[type];
+    styledMessage = `${style.icon} *${style.title}* ${style.icon}\n\n${message}`;
 
     return styledMessage + footer;
   }
 
-  // Tambahkan emoji dan formatting untuk caption media
+  // Format caption media dengan styling yang elegan
   formatMediaCaption(caption, mediaType) {
-    const icons = {
-      photo: "🖼️",
-      video: "🎥"
+    const styles = {
+      photo: {
+        icon: "🖼️",
+        title: "GALERI UPDATE"
+      },
+      video: {
+        icon: "🎥",
+        title: "VIDEO UPDATE"
+      }
     };
     
-    return `${icons[mediaType]} *${mediaType === 'photo' ? 'GALERI' : 'VIDEO'} UPDATE*\n\n${caption || 'Tidak ada deskripsi'}\n\n────────────────────\n_• Pesan siaran dari admin •_`;
+    const style = styles[mediaType];
+    return `${style.icon} *${style.title}*\n\n${caption || '📝 Tidak ada deskripsi'}\n\n────────────────────\n_• 📨 Pesan siaran dari admin •_`;
+  }
+
+  // Format pesan error yang lebih user-friendly
+  formatErrorMessage(message) {
+    return `❌ *ERROR*\n\n${message}\n\n⚠️ Silakan coba lagi atau hubungi admin jika masalah berlanjut.`;
+  }
+
+  // Format pesan sukses
+  formatSuccessMessage(message) {
+    return `✅ *SUKSES*\n\n${message}\n\n🎉 Selamat menikmati!`;
   }
 
   async handleUpdate(update) {
@@ -1146,6 +1173,7 @@ const Converterbot = class {
     
     // await this.addUserToKv(update.message.from);
 
+    // Handler untuk broadcast message (admin only)
     if (update.message.from.id.toString() === this.ownerId.toString()) {
         if (text.startsWith("/broadcast")) {
             const broadcastCaption = text.substring("/broadcast".length).trim();
@@ -1172,38 +1200,58 @@ const Converterbot = class {
                 const formattedMessage = this.formatBroadcastMessage(broadcastCaption, 'text');
                 await this.sendBroadcastMessage(formattedMessage, options);
             } else {
-                const helpMessage = `📝 *CARA MENGGUNAKAN BROADCAST*\n\n` +
-                  `• *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
-                  `• *Broadcast Gambar/Video:*\nBalas gambar/video dengan \`/broadcast Caption Anda\`\n\n` +
-                  `• *Atau langsung kirim:*\nGambar/video dengan caption \`/broadcast Pesan Anda\``;
+                const helpMessage = `🎯 *CARA MENGGUNAKAN BROADCAST*\n\n` +
+                  `📝 *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
+                  `🖼️ *Broadcast Gambar/Video:*\nBalas gambar/video dengan \`/broadcast Caption Anda\`\n\n` +
+                  `📤 *Atau langsung kirim:*\nGambar/video dengan caption \`/broadcast Pesan Anda\``;
                 
-                await this.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+                await this.sendMessage(chatId, helpMessage, { 
+                  parse_mode: 'Markdown',
+                  reply_to_message_id: messageId,
+                  ...options 
+                });
             }
             return new Response("OK", { status: 200 });
         }
     }
 
+    // Handler untuk userlist (admin only)
     if (text.startsWith("/userlist")) {
-      await this.sendUserList(chatId, 0, null, options);
+      if (update.message.from.id.toString() === this.ownerId.toString()) {
+        await this.sendUserList(chatId, 0, null, options);
+      } else {
+        await this.sendMessage(chatId, "❌ Anda tidak diizinkan menggunakan perintah ini.", {
+          reply_to_message_id: messageId,
+          ...options
+        });
+      }
       return new Response("OK", { status: 200 });
     }
     
+    // Handler untuk command converter
     if (/^\/converter(@\w+)?$/.test(text)) {
       await this.sendMessage(
         chatId,
-        `🤖 *Geo Project Bot*
+        `🤖 *Geo Project Bot - Converter*\n
+🔄 *Fitur Konversi Link Konfigurasi*
 
-Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *Nekobox*, dan *Clash*.
+Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
+• 🎯 *Singbox*
+• 📱 *Nekobox* 
+• ⚡ *Clash*
 
-**Contoh:**
+**📋 Contoh Format yang Diterima:**
 \`vless://...\`
-\`vmess://...\`
+\`vmess://...\` 
 \`trojan://...\`
 \`ss://...\`
 
-**Catatan:**
-- Maksimal 10 link per permintaan
-- Disarankan menggunakan *Singbox versi 1.10.3* atau *1.11.8*`,
+**📝 Ketentuan:**
+• 📊 Maksimal 10 link per permintaan
+• 💡 Disarankan menggunakan *Singbox versi 1.10.3* atau *1.11.8*
+• ⚡ Proses konversi otomatis & cepat
+
+✨ *Kirim link Anda sekarang!*`,
         { 
           parse_mode: "Markdown",
           reply_to_message_id: messageId,
@@ -1213,6 +1261,7 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
       return new Response("OK", { status: 200 });
     }
 
+    // Handler untuk konversi link
     if (text.includes("://")) {
       try {
         const links = text.split("\n")
@@ -1223,55 +1272,192 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         if (links.length === 0) {
           await this.sendMessage(
             chatId, 
-            "❌ Tidak ada link valid yang ditemukan. Kirimkan link VMess, VLESS, Trojan, atau Shadowsocks.",
-            { reply_to_message_id: messageId, ...options }
+            "❌ *Tidak Ada Link Valid*\n\nTidak ditemukan link yang dapat diproses. Pastikan format link sesuai:\n\n• `vless://...`\n• `vmess://...`\n• `trojan://...`\n• `ss://...`",
+            { 
+              parse_mode: "Markdown",
+              reply_to_message_id: messageId, 
+              ...options 
+            }
           );
           return new Response("OK", { status: 200 });
         }
         
+        // Kirim pesan processing
+        const processingMsg = await this.sendMessage(
+          chatId,
+          `🔄 *Memproses ${links.length} Link...*\n\n⏳ Sedang mengkonversi ke berbagai format, harap tunggu sebentar...`,
+          { 
+            parse_mode: "Markdown",
+            reply_to_message_id: messageId,
+            ...options 
+          }
+        );
+
+        // Proses konversi
         const clashConfig = generateClashConfig(links, true);
         const nekoboxConfig = generateNekoboxConfig(links, true);
         const singboxConfig = generateSingboxConfig(links, true);
         
+        // Hapus pesan processing
+        await this.deleteMessage(chatId, processingMsg.result.message_id);
+        
+        // Kirim hasil konversi
+        await this.sendMessage(
+          chatId,
+          `✅ *Konversi Berhasil!*\n\n📦 Mengirim ${links.length} konfigurasi dalam 3 format berbeda...`,
+          {
+            parse_mode: "Markdown",
+            reply_to_message_id: messageId,
+            ...options
+          }
+        );
+        
         await this.sendDocument(chatId, clashConfig, "clash.yaml", "text/yaml", { 
-          reply_to_message_id: messageId, ...options 
+          caption: "⚡ *Clash Configuration*",
+          parse_mode: "Markdown",
+          ...options 
         });
         await this.sendDocument(chatId, nekoboxConfig, "nekobox.json", "application/json", { 
-          reply_to_message_id: messageId, ...options 
+          caption: "📱 *Nekobox Configuration*",
+          parse_mode: "Markdown",
+          ...options 
         });
         await this.sendDocument(chatId, singboxConfig, "singbox.bpf", "application/json", { 
-          reply_to_message_id: messageId, ...options 
+          caption: "🎯 *Singbox Configuration*", 
+          parse_mode: "Markdown",
+          ...options 
         });
         
       } catch (error) {
         console.error("Error processing links:", error);
         await this.sendMessage(
           chatId, 
-          `❌ Error: ${error.message}`,
-          { reply_to_message_id: messageId, ...options }
+          this.formatErrorMessage(`Gagal memproses link:\n\`${error.message}\``),
+          { 
+            parse_mode: "Markdown",
+            reply_to_message_id: messageId, 
+            ...options 
+          }
         );
       }
     }
 
+    // Handler untuk command start
+    if (/^\/start(@\w+)?$/.test(text)) {
+      const userId = update.message.from.id;
+      const groupId = "@auto_sc";
+      try {
+        const member = await this.getChatMember(groupId, userId);
+        if (member.ok && (member.result.status === "member" || member.result.status === "administrator" || member.result.status === "creator")) {
+          await this.addUserToKv(update.message.from, update.message.chat);
+          const imageUrl = "https://github.com/jaka8m/BOT-CONVERTER/raw/main/start.png";
+          try {
+            await this.sendPhoto(chatId, imageUrl, {
+              caption: `
+✨ *WELCOME TO PHREAKER BOT* ✨
+
+🔍 *Cara Penggunaan:*
+1️⃣ Masukkan alamat IP dan port yang ingin Anda cek
+2️⃣ Jika tidak memasukkan port, default adalah *443*
+3️⃣ Tunggu beberapa detik untuk hasilnya
+
+🎯 *Command Tersedia:*
+• /start - Menu awal bot
+• /converter - Konversi config
+• /menu - Lihat semua command
+
+💡 *Format IP yang Diterua:*
+• \`176.97.78.80\`
+• \`176.97.78.80:2053\`
+
+⚠️ *Catatan Penting:*
+• Jika status *DEAD*, Akun *VLESS*, *SS*, dan *TROJAN* tidak akan dibuat
+
+🌐 *Links Penting:*
+├─ 🌍 [WEB VPN TUNNEL](https://joss.krekkrek.web.id)
+├─ 📺 [CHANNEL VPS & Script](https://t.me/testikuy_mang)
+├─ 👥 [Phreaker GROUP](https://t.me/+Q1ARd8ZsAuM2xB6-)
+└─ 📢 [GEO PROJECT](https://t.me/sampiiiiu)
+
+💫 *Terima kasih telah menggunakan layanan kami!*`,
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: "📢 GEO PROJECT", url: "https://t.me/sampiiiiu" },
+                    { text: "👥 JOIN GROUP", url: "https://t.me/auto_sc" }
+                  ],
+                  [
+                    { text: "🌐 WEB VPN", url: "https://joss.krekkrek.web.id" },
+                    { text: "📺 CHANNEL", url: "https://t.me/testikuy_mang" }
+                  ]
+                ]
+              },
+              ...options
+            });
+          } catch (error) {
+            console.error("Error sending photo:", error);
+            // Fallback ke text message jika gagal kirim photo
+            await this.sendMessage(chatId, 
+              "✨ *Selamat Datang di Phreaker Bot!*\n\nSilakan gunakan /menu untuk melihat semua command yang tersedia.",
+              { parse_mode: "Markdown", ...options }
+            );
+          }
+        } else {
+          await this.sendMessage(chatId, 
+            "🔒 *Akses Dibatasi*\n\nAnda harus bergabung dengan grup terlebih dahulu untuk menggunakan bot ini.", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "🚪 Gabung Grup Sekarang", url: "https://t.me/auto_sc" }],
+                [{ text: "🔄 Coba Lagi", callback_data: "retry_join" }]
+              ]
+            },
+            ...options
+          });
+        }
+      } catch (error) {
+        console.error("Error checking group membership:", error);
+        await this.sendMessage(chatId, 
+          "❌ *Terjadi Kesalahan*\n\nGagal memverifikasi keanggotaan grup. Silakan coba lagi nanti.", 
+          { parse_mode: "Markdown", ...options }
+        );
+      }
+      return new Response("OK", { status: 200 });
+    }
+    
     return new Response("OK", { status: 200 });
   }
     
-  async addUserToKv(from) {
+  async addUserToKv(from, chat) {
     if (!this.kv) {
         return;
     }
     try {
-        if (!from || !from.id) return;
-        const userId = from.id.toString();
-        const userData = {
-            id: from.id,
-            first_name: from.first_name || null,
-            last_name: from.last_name || null,
-            username: from.username || null
-        };
-        await this.kv.put(`user:${userId}`, JSON.stringify(userData));
+        if (from && from.id) {
+            const userId = from.id.toString();
+            const userData = {
+                id: from.id,
+                first_name: from.first_name || null,
+                last_name: from.last_name || null,
+                username: from.username || null,
+                joined_at: new Date().toISOString()
+            };
+            await this.kv.put(`user:${userId}`, JSON.stringify(userData));
+        }
+
+        if (chat && chat.id < 0) {
+            const chatId = chat.id.toString();
+            const chatData = {
+                id: chat.id,
+                title: chat.title || null,
+                type: chat.type || null,
+                added_at: new Date().toISOString()
+            };
+            await this.kv.put(`chat:${chatId}`, JSON.stringify(chatData));
+        }
     } catch (error) {
-        console.error("Failed to add user to KV:", error);
+        console.error("Failed to add user or group to KV:", error);
     }
   }
 
@@ -1345,6 +1531,20 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     return response.json();
   }
 
+  async deleteMessage(chatId, messageId) {
+    const url = `${this.apiUrl}/bot${this.token}/deleteMessage`;
+    const body = {
+      chat_id: chatId,
+      message_id: messageId
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+
   async getAllUsers() {
     if (!this.kv) {
         return [];
@@ -1372,6 +1572,12 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     let successfulSends = 0;
     let failedSends = 0;
 
+    // Kirim pesan broadcast dimulai
+    await this.sendMessage(this.ownerId, 
+      `📤 *Memulai Broadcast...*\n\n📊 Total penerima: ${users.length} pengguna\n⏳ Estimasi waktu: ${Math.ceil(users.length * 0.1)} detik`,
+      { parse_mode: "Markdown" }
+    );
+
     for (const user of users) {
         try {
             await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
@@ -1387,24 +1593,25 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         }
     }
 
-    let groupSendStatus = "gagal";
+    let groupSendStatus = "❌ Gagal";
     try {
         const response = await this.sendMessage(this.groupId, message, options);
         if (response && response.ok) {
-            groupSendStatus = "sukses";
+            groupSendStatus = "✅ Sukses";
         }
     } catch (error) {
         console.error(`Failed to send message to group ${this.groupId}:`, error);
     }
 
-    const summary = `*Laporan Broadcast Teks:*\n\n` +
-      `*Pengguna:*\n` +
+    const summary = `📊 *Laporan Broadcast Selesai*\n\n` +
+      `👥 *Statistik Pengguna:*\n` +
       `✅ Berhasil: ${successfulSends}\n` +
-      `❌ Gagal: ${failedSends}\n\n` +
-      `*Grup:*\n` +
-      `Status pengiriman: ${groupSendStatus}`;
+      `❌ Gagal: ${failedSends}\n` +
+      `📈 Success Rate: ${((successfulSends / users.length) * 100).toFixed(1)}%\n\n` +
+      `💬 *Statistik Grup:*\n` +
+      `Status: ${groupSendStatus}`;
     
-    await this.sendMessage(this.ownerId, summary);
+    await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
   }
 
   async sendBroadcastPhoto(file_id, caption, options = {}) {
@@ -1412,10 +1619,15 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     let successfulSends = 0;
     let failedSends = 0;
 
+    await this.sendMessage(this.ownerId,
+      `🖼️ *Memulai Broadcast Foto...*\n\n📊 Total penerima: ${users.length} pengguna`,
+      { parse_mode: "Markdown" }
+    );
+
     for (const user of users) {
         try {
-            await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
-            const response = await this.sendPhoto(user.id, file_id, { caption });
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const response = await this.sendPhoto(user.id, file_id, { caption, parse_mode: "Markdown" });
             if (response && response.ok) {
                 successfulSends++;
             } else {
@@ -1427,24 +1639,24 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         }
     }
 
-    let groupSendStatus = "gagal";
+    let groupSendStatus = "❌ Gagal";
     try {
-        const response = await this.sendPhoto(this.groupId, file_id, { caption, ...options });
+        const response = await this.sendPhoto(this.groupId, file_id, { caption, parse_mode: "Markdown", ...options });
         if (response && response.ok) {
-            groupSendStatus = "sukses";
+            groupSendStatus = "✅ Sukses";
         }
     } catch (error) {
         console.error(`Failed to send photo to group ${this.groupId}:`, error);
     }
 
-    const summary = `*Laporan Broadcast Foto:*\n\n` +
-      `*Pengguna:*\n` +
-      `✅ Berhasil: ${successfulSends}\n` +
-      `❌ Gagal: ${failedSends}\n\n` +
-      `*Grup:*\n` +
-      `Status pengiriman: ${groupSendStatus}`;
+    const summary = `📊 *Photo Broadcast Report Completed*\n\n` +
+      `👥 *User Statistics:*\n` +
+      `✅ Succeed: ${successfulSends}\n` +
+      `❌ Fail: ${failedSends}\n\n` +
+      `💬 *Group Statistics:*\n` +
+      `Status: ${groupSendStatus}`;
       
-    await this.sendMessage(this.ownerId, summary);
+    await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
   }
 
   async sendBroadcastVideo(file_id, caption, options = {}) {
@@ -1452,10 +1664,15 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     let successfulSends = 0;
     let failedSends = 0;
 
+    await this.sendMessage(this.ownerId,
+      `🎥 *Memulai Broadcast Video...*\n\n📊 Total penerima: ${users.length} pengguna`,
+      { parse_mode: "Markdown" }
+    );
+
     for (const user of users) {
         try {
-            await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
-            const response = await this.sendVideo(user.id, file_id, { caption });
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const response = await this.sendVideo(user.id, file_id, { caption, parse_mode: "Markdown" });
             if (response && response.ok) {
                 successfulSends++;
             } else {
@@ -1467,31 +1684,35 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         }
     }
     
-    let groupSendStatus = "gagal";
+    let groupSendStatus = "❌ Gagal";
     try {
-        const response = await this.sendVideo(this.groupId, file_id, { caption, ...options });
+        const response = await this.sendVideo(this.groupId, file_id, { caption, parse_mode: "Markdown", ...options });
         if (response && response.ok) {
-            groupSendStatus = "sukses";
+            groupSendStatus = "✅ Sukses";
         }
     } catch (error) {
         console.error(`Failed to send video to group ${this.groupId}:`, error);
     }
 
-    const summary = `*Laporan Broadcast Video:*\n\n` +
-      `*Pengguna:*\n` +
-      `✅ Berhasil: ${successfulSends}\n` +
-      `❌ Gagal: ${failedSends}\n\n` +
-      `*Grup:*\n` +
-      `Status pengiriman: ${groupSendStatus}`;
+    const summary = `📊 *Video Broadcast Report Completed*\n\n` +
+      `👥 *User Statistics:*\n` +
+      `✅ Succeed: ${successfulSends}\n` +
+      `❌ Fail: ${failedSends}\n\n` +
+      `💬 *Group Statistics:*\n` +
+      `Status: ${groupSendStatus}`;
       
-    await this.sendMessage(this.ownerId, summary);
+    await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
   }
 
   async sendUserList(chatId, page = 0, messageId = null, options = {}) {
     if (!this.kv) {
-        await this.sendMessage(chatId, "❌ Database pengguna saat ini tidak tersedia.", options);
+        await this.sendMessage(chatId, "❌ *Database Tidak Tersedia*\n\nSaat ini tidak dapat mengakses database pengguna.", {
+          parse_mode: "Markdown",
+          ...options
+        });
         return;
     }
+    
     try {
         const pageSize = 10;
         const list = await this.kv.list({
@@ -1509,41 +1730,81 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         const totalUsers = allUsers.length;
         const totalPages = Math.ceil(totalUsers / pageSize);
         const start = page * pageSize;
-        const end = start + pageSize;
+        const end = Math.min(start + pageSize, totalUsers);
         const pageUsers = allUsers.slice(start, end);
-        
-        let userListText = `👥 *Daftar Pengguna Terdaftar*\n`;
-        userListText += `*Total:* ${totalUsers} pengguna\n`;
-        userListText += `*Halaman:* ${page + 1} dari ${totalPages}\n\n`;
 
-        let counter = start + 1;
-        for (const userData of pageUsers) {
-            const firstName = userData.first_name || "Nama";
-            const lastName = userData.last_name || "Tidak ada";
-            const username = userData.username ? ` (@${userData.username})` : " (tanpa username)";
+        let userListText = `👥 *LIST OF REGIST USERS* 👥\n\n`;
+        userListText += `📊 **Total:** ${totalUsers} pengguna\n`;
+        userListText += `📄 **Page:** ${page + 1} dari ${totalPages}\n`;
+        userListText += `🕒 **Data updated:** ${new Date().toLocaleString('id-ID')}\n\n`;
+
+        if (pageUsers.length === 0) {
+            userListText += `📭 *Tidak ada pengguna pada halaman ini*\n\n`;
+        } else {
+            userListText += `📋 *User List:*\n\n`;
             
-            userListText += `*${counter}.* ${firstName} ${lastName}${username}\n`;
-            userListText += `   *ID:* \`${userData.id}\`\n\n`;
-            counter++;
+            let counter = start + 1;
+            for (const userData of pageUsers) {
+                const firstName = userData.first_name || '-';
+                const lastName = userData.last_name || '';
+                const fullName = `${firstName}${lastName ? ' ' + lastName : ''}`.trim();
+                const username = userData.username ? `(@${userData.username})` : '';
+                
+                userListText += `**${counter}.** 👤 ${fullName} ${username}\n`;
+                userListText += `    🆔 **ID:** \`${userData.id}\`\n`;
+                
+                if (userData.joined_at) {
+                    const joinDate = new Date(userData.joined_at).toLocaleDateString('id-ID');
+                    userListText += `    📅 **Bergabung:** ${joinDate}\n`;
+                }
+                
+                if (counter < start + pageUsers.length) {
+                    userListText += `    ────────────────────\n`;
+                }
+                
+                counter++;
+            }
+        }
+
+        if (totalPages > 1) {
+            userListText += `\n🔍 Gunakan tombol di bawah untuk navigasi halaman`;
         }
 
         const inline_keyboard = [];
         const navButtons = [];
+        
         if (page > 0) {
             navButtons.push({
-                text: "⬅️ Halaman Sebelumnya",
+                text: "⏪ Sebelumnya",
                 callback_data: `userlist_page_${page - 1}`
             });
         }
+        
+        if (page > 0 && end < totalUsers) {
+            navButtons.push({
+                text: `📄 ${page + 1}/${totalPages}`,
+                callback_data: `current_page`
+            });
+        }
+        
         if (end < totalUsers) {
             navButtons.push({
-                text: "Halaman Berikutnya ➡️",
+                text: "Selanjutnya ⏩",
                 callback_data: `userlist_page_${page + 1}`
             });
         }
+        
         if (navButtons.length > 0) {
             inline_keyboard.push(navButtons);
         }
+
+        // Tambahkan tombol refresh
+        inline_keyboard.push([
+            {
+                text: "🔄 Refresh",
+                callback_data: `userlist_page_${page}`
+            }
+        ]);
 
         const requestOptions = {
             parse_mode: "Markdown",
@@ -1560,7 +1821,10 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
         }
     } catch (error) {
         console.error("Gagal mengirim daftar pengguna:", error);
-        await this.sendMessage(chatId, `❌ Gagal mengambil daftar pengguna.\n\nPenyebab: ${error.message}`, options);
+        await this.sendMessage(chatId, 
+            `❌ *Gagal Memuat Daftar Pengguna*\n\n**Penyebab:** ${error.message}\n\nSilakan coba lagi nanti.`, 
+            { parse_mode: "Markdown", ...options }
+        );
     }
   }
   
@@ -1570,6 +1834,7 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     const messageId = callbackQuery.message.message_id;
     const message_thread_id = callbackQuery.message.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
+    
     if (data.startsWith("userlist_page_")) {
       const page = parseInt(data.split("_")[2], 10);
       await this.sendUserList(chatId, page, messageId, options);
@@ -1598,6 +1863,20 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
   async answerCallbackQuery(callbackQueryId) {
     const url = `${this.apiUrl}/bot${this.token}/answerCallbackQuery`;
     const body = { callback_query_id: callbackQueryId };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+
+  async getChatMember(chatId, userId) {
+    const url = `${this.apiUrl}/bot${this.token}/getChatMember`;
+    const body = {
+      chat_id: chatId,
+      user_id: userId
+    };
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1987,19 +2266,6 @@ const TelegramBotku = class {
     });
     return response.json();
   }
-  async getChatMember(chatId, userId) {
-    const url = `${this.apiUrl}/bot${this.token}/getChatMember`;
-    const body = {
-      chat_id: chatId,
-      user_id: userId
-    };
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return response.json();
-  }
   async handleUpdate(update) {
     const message_thread_id = update.message?.message_thread_id || update.callback_query?.message?.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
@@ -2280,65 +2546,6 @@ _— Tim GEO BOT SERVER_
   return new Response("OK", { status: 200 });
 }
     
-if (/^\/start(@\w+)?$/.test(text)) {
-      const userId = update.message.from.id;
-      const groupId = "@auto_sc";
-      try {
-        const member = await this.getChatMember(groupId, userId);
-        if (member.ok && (member.result.status === "member" || member.result.status === "administrator" || member.result.status === "creator")) {
-          const imageUrl = "https://github.com/jaka8m/BOT-CONVERTER/raw/main/start.png";
-          try {
-            await this.sendPhoto(chatId, imageUrl, {
-              caption: `
-═════════════════
-≡             𝕻𝖍𝖗𝖊𝖆𝖐𝖊𝖗                ≡
-═════════════════
-🔍 *Cara Penggunaan:*
-1. Masukkan alamat IP dan port yang ingin Anda cek.
-2. Jika tidak memasukkan port, maka default adalah *443*.
-3. Tunggu beberapa detik untuk hasilnya
-
-💡KETIK /menu UNTUK MELIHAT COMMAND
-
-💡 *Format IP yang Diterima:*
-• \`176.97.78.80\`
-• \`176.97.78.80:2053\`
-
-⚠️ *Catatan:*
-- Jika status *DEAD*, Akun *VLESS*, *SS*, dan *TROJAN* tidak akan dibuat.
-
-🌐 [WEB VPN TUNNEL](https://joss.krekkrek.web.id)
-📺 [CHANNEL VPS & Script VPS](https://t.me/testikuy_mang)
-👥 [Phreaker GROUP](https://t.me/+Q1ARd8ZsAuM2xB6-)
-═════════════════
-            `.trim(),
-              parse_mode: "Markdown",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: "📢 GEO PROJECT", url: "https://t.me/sampiiiiu" }]
-                ]
-              },
-              ...options
-            });
-          } catch (error) {
-            console.error(error);
-          }
-        } else {
-          await this.sendMessage(chatId, "Anda harus bergabung dengan grup untuk menggunakan bot ini.", {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: "Gabung Grup", url: "https://t.me/auto_sc" }]
-              ]
-            },
-            ...options
-          });
-        }
-      } catch (error) {
-        console.error("Error checking group membership:", error);
-        await this.sendMessage(chatId, "Terjadi kesalahan saat memeriksa keanggotaan grup.", options);
-      }
-      return new Response("OK", { status: 200 });
-    }
     return new Response("OK", { status: 200 });
   }
   async sendMessage(chatId, text, options = {}) {
