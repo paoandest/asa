@@ -1104,13 +1104,12 @@ const Converterbot = class {
       minute: '2-digit'
     });
 
-    const header = "🌟 *PENAWARAN SPESIAL* 🌟\n\n";
-    const footer = `\n\n────────────────────\n🕒 ${timestamp}\n_• Pesan resmi dari admin •_`;
+    const footer = `\n\n───────────────\n🕒 ${timestamp}\n_• Pesan resmi dari admin •_`;
 
     // Styling berdasarkan tipe konten
     let styledMessage = message;
     if (type === 'text') {
-      styledMessage = `📢 *INFORMASI PENTING* 📢\n\n${message}`;
+      styledMessage = `📢 *BROADCAST* 📢\n\n${message}`;
     } else if (type === 'photo') {
       styledMessage = `🖼️ *GALERI UPDATE* 🖼️\n\n${message}`;
     } else if (type === 'video') {
@@ -1476,7 +1475,7 @@ Gagal dikirim: *${failCount}*`;
         let userListText = `*Daftar Pengguna (${start + 1}-${Math.min(end, totalUsers)} dari ${totalUsers})*\n\n`;
         for (const key of pageKeys) {
             const userData = await this.kv.get(key.name, "json");
-            if (userData) {
+            if (userData && userData.id) {
                 const firstName = userData.first_name || "";
                 const lastName = userData.last_name || "";
                 const username = userData.username ? ` (@${userData.username})` : "";
