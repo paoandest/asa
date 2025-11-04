@@ -1091,6 +1091,7 @@ const Converterbot = class {
     this.apiUrl = apiUrl || "https://api.telegram.org";
     this.ownerId = ownerId;
     this.kv = env.GEO_DB;
+    this.groupId = -1002042632790;
   }
 
   // Format pesan broadcast yang lebih menarik
@@ -1116,7 +1117,7 @@ const Converterbot = class {
       styledMessage = `🎥 *VIDEO UPDATE* 🎥\n\n${message}`;
     }
 
-    return header + styledMessage + footer;
+    return styledMessage + footer;
   }
 
   // Tambahkan emoji dan formatting untuk caption media
@@ -1153,23 +1154,23 @@ const Converterbot = class {
                 if (reply.photo) {
                     const file_id = reply.photo[reply.photo.length - 1].file_id;
                     const formattedCaption = this.formatMediaCaption(broadcastCaption, 'photo');
-                    await this.sendBroadcastPhoto(file_id, formattedCaption);
+                    await this.sendBroadcastPhoto(file_id, formattedCaption, options);
                 } else if (reply.video) {
                     const file_id = reply.video.file_id;
                     const formattedCaption = this.formatMediaCaption(broadcastCaption, 'video');
-                    await this.sendBroadcastVideo(file_id, formattedCaption);
+                    await this.sendBroadcastVideo(file_id, formattedCaption, options);
                 }
             } else if (update.message.photo) {
                 const file_id = update.message.photo[update.message.photo.length - 1].file_id;
                 const formattedCaption = this.formatMediaCaption(caption.substring("/broadcast".length).trim(), 'photo');
-                await this.sendBroadcastPhoto(file_id, formattedCaption);
+                await this.sendBroadcastPhoto(file_id, formattedCaption, options);
             } else if (update.message.video) {
                 const file_id = update.message.video.file_id;
                 const formattedCaption = this.formatMediaCaption(caption.substring("/broadcast".length).trim(), 'video');
-                await this.sendBroadcastVideo(file_id, formattedCaption);
+                await this.sendBroadcastVideo(file_id, formattedCaption, options);
             } else if (broadcastCaption) {
                 const formattedMessage = this.formatBroadcastMessage(broadcastCaption, 'text');
-                await this.sendBroadcastMessage(formattedMessage);
+                await this.sendBroadcastMessage(formattedMessage, options);
             } else {
                 const helpMessage = `📝 *CARA MENGGUNAKAN BROADCAST*\n\n` +
                   `• *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
@@ -1366,94 +1367,124 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format *Singbox*, *
     }
   }
 
-  async sendBroadcastMessage(message) {
+  async sendBroadcastMessage(message, options = {}) {
     const users = await this.getAllUsers();
-    let successCount = 0;
-    let failCount = 0;
+    let successfulSends = 0;
+    let failedSends = 0;
 
     for (const user of users) {
-      try {
-        const response = await this.sendMessage(user.id, message);
-        if (response && response.ok) {
-          successCount++;
-        } else {
-          failCount++;
-          console.error(`Gagal mengirim pesan ke ${user.id}:`, response ? response.description : "No response");
+        try {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
+            const response = await this.sendMessage(user.id, message);
+            if (response && response.ok) {
+                successfulSends++;
+            } else {
+                failedSends++;
+            }
+        } catch (error) {
+            console.error(`Failed to send message to user ${user.id}:`, error);
+            failedSends++;
         }
-      } catch (error) {
-        failCount++;
-        console.error(`Gagal mengirim pesan ke ${user.id}:`, error);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
-    const totalUsers = users.length;
-    const broadcastReport = `*Broadcast Teks Selesai* 📝
+    let groupSendStatus = "gagal";
+    try {
+        const response = await this.sendMessage(this.groupId, message, options);
+        if (response && response.ok) {
+            groupSendStatus = "sukses";
+        }
+    } catch (error) {
+        console.error(`Failed to send message to group ${this.groupId}:`, error);
+    }
 
-Total user terdaftar: *${totalUsers}*
-Berhasil dikirim: *${successCount}*
-Gagal dikirim: *${failCount}*`;
-    await this.sendMessage(this.ownerId, broadcastReport);
+    const summary = `*Laporan Broadcast Teks:*\n\n` +
+      `*Pengguna:*\n` +
+      `✅ Berhasil: ${successfulSends}\n` +
+      `❌ Gagal: ${failedSends}\n\n` +
+      `*Grup:*\n` +
+      `Status pengiriman: ${groupSendStatus}`;
+    
+    await this.sendMessage(this.ownerId, summary);
   }
 
-  async sendBroadcastPhoto(file_id, caption) {
+  async sendBroadcastPhoto(file_id, caption, options = {}) {
     const users = await this.getAllUsers();
-    let successCount = 0;
-    let failCount = 0;
+    let successfulSends = 0;
+    let failedSends = 0;
 
     for (const user of users) {
-      try {
-        const response = await this.sendPhoto(user.id, file_id, { caption });
-        if (response && response.ok) {
-          successCount++;
-        } else {
-          failCount++;
-          console.error(`Gagal mengirim foto ke ${user.id}:`, response ? response.description : "No response");
+        try {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
+            const response = await this.sendPhoto(user.id, file_id, { caption });
+            if (response && response.ok) {
+                successfulSends++;
+            } else {
+                failedSends++;
+            }
+        } catch (error) {
+            console.error(`Failed to send photo to user ${user.id}:`, error);
+            failedSends++;
         }
-      } catch (error) {
-        failCount++;
-        console.error(`Gagal mengirim foto ke ${user.id}:`, error);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    const totalUsers = users.length;
-    const broadcastReport = `*Broadcast Foto Selesai* 📸
+    let groupSendStatus = "gagal";
+    try {
+        const response = await this.sendPhoto(this.groupId, file_id, { caption, ...options });
+        if (response && response.ok) {
+            groupSendStatus = "sukses";
+        }
+    } catch (error) {
+        console.error(`Failed to send photo to group ${this.groupId}:`, error);
+    }
 
-Total user terdaftar: *${totalUsers}*
-Berhasil dikirim: *${successCount}*
-Gagal dikirim: *${failCount}*`;
-    await this.sendMessage(this.ownerId, broadcastReport);
+    const summary = `*Laporan Broadcast Foto:*\n\n` +
+      `*Pengguna:*\n` +
+      `✅ Berhasil: ${successfulSends}\n` +
+      `❌ Gagal: ${failedSends}\n\n` +
+      `*Grup:*\n` +
+      `Status pengiriman: ${groupSendStatus}`;
+      
+    await this.sendMessage(this.ownerId, summary);
   }
 
-  async sendBroadcastVideo(file_id, caption) {
+  async sendBroadcastVideo(file_id, caption, options = {}) {
     const users = await this.getAllUsers();
-    let successCount = 0;
-    let failCount = 0;
+    let successfulSends = 0;
+    let failedSends = 0;
 
     for (const user of users) {
-      try {
-        const response = await this.sendVideo(user.id, file_id, { caption });
-        if (response && response.ok) {
-          successCount++;
-        } else {
-          failCount++;
-          console.error(`Gagal mengirim video ke ${user.id}:`, response ? response.description : "No response");
+        try {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
+            const response = await this.sendVideo(user.id, file_id, { caption });
+            if (response && response.ok) {
+                successfulSends++;
+            } else {
+                failedSends++;
+            }
+        } catch (error) {
+            console.error(`Failed to send video to user ${user.id}:`, error);
+            failedSends++;
         }
-      } catch (error) {
-        failCount++;
-        console.error(`Gagal mengirim video ke ${user.id}:`, error);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    
+    let groupSendStatus = "gagal";
+    try {
+        const response = await this.sendVideo(this.groupId, file_id, { caption, ...options });
+        if (response && response.ok) {
+            groupSendStatus = "sukses";
+        }
+    } catch (error) {
+        console.error(`Failed to send video to group ${this.groupId}:`, error);
     }
 
-    const totalUsers = users.length;
-    const broadcastReport = `*Broadcast Video Selesai* 🎥
-
-Total user terdaftar: *${totalUsers}*
-Berhasil dikirim: *${successCount}*
-Gagal dikirim: *${failCount}*`;
-    await this.sendMessage(this.ownerId, broadcastReport);
+    const summary = `*Laporan Broadcast Video:*\n\n` +
+      `*Pengguna:*\n` +
+      `✅ Berhasil: ${successfulSends}\n` +
+      `❌ Gagal: ${failedSends}\n\n` +
+      `*Grup:*\n` +
+      `Status pengiriman: ${groupSendStatus}`;
+      
+    await this.sendMessage(this.ownerId, summary);
   }
 
   async sendUserList(chatId, page = 0, messageId = null, options = {}) {
@@ -1466,39 +1497,54 @@ Gagal dikirim: *${failCount}*`;
         const list = await this.kv.list({
             prefix: "user:"
         });
-        const userKeys = list.keys;
-        const totalUsers = userKeys.length;
+
+        const allUsers = [];
+        for (const key of list.keys) {
+            const userData = await this.kv.get(key.name, "json");
+            if (userData && userData.id) {
+                allUsers.push(userData);
+            }
+        }
+
+        const totalUsers = allUsers.length;
         const totalPages = Math.ceil(totalUsers / pageSize);
         const start = page * pageSize;
         const end = start + pageSize;
-        const pageKeys = userKeys.slice(start, end);
-        let userListText = `*Daftar Pengguna (${start + 1}-${Math.min(end, totalUsers)} dari ${totalUsers})*\n\n`;
-        for (const key of pageKeys) {
-            const userData = await this.kv.get(key.name, "json");
-            if (userData && userData.id) {
-                const firstName = userData.first_name || "";
-                const lastName = userData.last_name || "";
-                const username = userData.username ? ` (@${userData.username})` : "";
-                userListText += `*ID:* \`${userData.id}\`\n*Nama:* ${firstName} ${lastName}${username}\n\n`;
-            }
+        const pageUsers = allUsers.slice(start, end);
+        
+        let userListText = `👥 *Daftar Pengguna Terdaftar*\n`;
+        userListText += `*Total:* ${totalUsers} pengguna\n`;
+        userListText += `*Halaman:* ${page + 1} dari ${totalPages}\n\n`;
+
+        let counter = start + 1;
+        for (const userData of pageUsers) {
+            const firstName = userData.first_name || "Nama";
+            const lastName = userData.last_name || "Tidak ada";
+            const username = userData.username ? ` (@${userData.username})` : " (tanpa username)";
+            
+            userListText += `*${counter}.* ${firstName} ${lastName}${username}\n`;
+            userListText += `   *ID:* \`${userData.id}\`\n\n`;
+            counter++;
         }
+
         const inline_keyboard = [];
         const navButtons = [];
         if (page > 0) {
             navButtons.push({
-                text: "⬅️ Prev",
+                text: "⬅️ Halaman Sebelumnya",
                 callback_data: `userlist_page_${page - 1}`
             });
         }
         if (end < totalUsers) {
             navButtons.push({
-                text: "Next ➡️",
+                text: "Halaman Berikutnya ➡️",
                 callback_data: `userlist_page_${page + 1}`
             });
         }
         if (navButtons.length > 0) {
             inline_keyboard.push(navButtons);
         }
+
         const requestOptions = {
             parse_mode: "Markdown",
             reply_markup: {
@@ -1506,16 +1552,15 @@ Gagal dikirim: *${failCount}*`;
             },
             ...options
         };
+
         if (messageId) {
             await this.editMessageText(chatId, messageId, userListText, requestOptions);
         } else {
             await this.sendMessage(chatId, userListText, requestOptions);
         }
     } catch (error) {
-        console.error("Failed to send user list:", error);
-        await this.sendMessage(chatId, `❌ Gagal mengambil daftar pengguna.
-
-Penyebab: ${error.message}`, options);
+        console.error("Gagal mengirim daftar pengguna:", error);
+        await this.sendMessage(chatId, `❌ Gagal mengambil daftar pengguna.\n\nPenyebab: ${error.message}`, options);
     }
   }
   
@@ -1994,7 +2039,7 @@ const TelegramBotku = class {
 ├─ 👤 *Manajemen Wildcard*
 │  ├─ /add \\\`[bug]\\\` ─ Tambah Wildcard
 │  ├─ /del \\\`[bug]\\\` ─ Hapus Wildcard (Admin)
-│  └─ /list ─ Daftar Wildcard
+│  └─ /listwildcard ─ Daftar Wildcard
 │
 ├─ 📣 *Admin*
 │  └─ /broadcast \\\`[teks]\\\` ─ Kirim Pesan
@@ -3221,7 +3266,7 @@ ${full}deleted successfully.\`\`\``);
       await this.sendMessage(chatId, results.join("\n\n"), { parse_mode: "Markdown", ...options });
       return new Response("OK", { status: 200 });
     }
-    if (/^\/list(@\w+)?$/.test(text)) {
+    if (/^\/listwildcard(@\w+)?$/.test(text)) {
       let domains = [];
       try {
         domains = await this.globalBot.getDomainList();
@@ -3444,7 +3489,7 @@ ${error.message}`, options);
         }
         return new Response("OK", { status: 200 });
       }
-      if (/^\/listwildcard(@\w+)?$/.test(text)) {
+      if (/^\/listwildcardd(@\w+)?$/.test(text)) {
         const wildcards = [
           "ava.game.naver.com",
           "krikkrik.tech",
