@@ -1213,6 +1213,11 @@ const Converterbot = class {
             }
             return new Response("OK", { status: 200 });
         }
+
+        if (text.startsWith("/userlist")) {
+            await this.sendUserList(chatId);
+            return new Response("OK", { status: 200 });
+        }
     }
 
     
@@ -1693,13 +1698,134 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
   }
 
   
+  
+  async sendUserList(chatId, page = 1, messageId = null) {
+    try {
+        const allUsers = await this.getAllUsers();
+        const users = allUsers.filter(u => u && u.id);
+        const totalUsers = users.length;
+        const usersPerPage = 10;
+        const totalPages = Math.ceil(totalUsers / usersPerPage) || 1;
+
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        const start = (page - 1) * usersPerPage;
+        const end = start + usersPerPage;
+        const pagedUsers = users.slice(start, end);
+
+        let userListText = `🎯 *DAFTAR PENGGUNA*\n╔═══════════════════╗\n` +
+                           `📊 Total: ${totalUsers} pengguna\n` +
+                           `📄 Halaman: ${page}/${totalPages}\n` +
+                           `╚═══════════════════╝\n\n`;
+
+        pagedUsers.forEach((user, index) => {
+            const userNumber = start + index + 1;
+            const username = user.username ? `@${user.username}` : (user.first_name || 'Tanpa Nama');
+            userListText += `👤 ${userNumber}. ${username}\n🆔 ID: \`${user.id}\`\n\n`;
+        });
+
+        // row navigasi (Prev | Refresh | Next)
+        const navRow = [];
+        if (page > 1) navRow.push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
+        navRow.push({ text: "🔄 Refresh", callback_data: `userlist_refresh_${page}` });
+        if (page < totalPages) navRow.push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
+
+        // indikator halaman di baris kedua (tanpa aksi)
+        const indicatorRow = [{ text: `📄 Halaman ${page} / ${totalPages}`, callback_data: `userlist_indicator_${page}_${totalPages}` }];
+
+        const keyboard = { inline_keyboard: [navRow, indicatorRow] };
+        const options = { parse_mode: 'Markdown', reply_markup: keyboard };
+
+        if (messageId) {
+            // edit message yang ada
+            await this.editMessageText(chatId, messageId, userListText, options);
+        } else {
+            // kirim pesan baru
+            await this.sendMessage(chatId, userListText, options);
+        }
+    } catch (error) {
+        console.error("Failed to send user list:", error);
+        const errorMessage = this.formatErrorMessage("Gagal memperbarui daftar pengguna.");
+        if (messageId) {
+            await this.editMessageText(chatId, messageId, errorMessage, {});
+        } else {
+            await this.sendMessage(chatId, errorMessage);
+        }
+    }
+  }
+
+        keyboard.inline_keyboard[0].push({ text: "🔄 Refresh", callback_data: `userlist_page_1` });
+        if (page < totalPages) {
+            keyboard.inline_keyboard[0].push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
+        }
+
+        const options = { parse_mode: 'Markdown', reply_markup: keyboard };
+
+        if (messageId) {
+            await this.editMessageText(chatId, messageId, userListText, options);
+        } else {
+            await this.sendMessage(chatId, userListText, options);
+        }
+    } catch (error) {
+        console.error("Failed to send user list:", error);
+        const errorMessage = this.formatErrorMessage("Gagal memperbarui daftar pengguna.");
+        if (messageId) {
+            await this.editMessageText(chatId, messageId, errorMessage, {});
+        } else {
+            await this.sendMessage(chatId, errorMessage);
+        }
+    }
+  }
+
+  
   async handleCallbackQuery(callbackQuery) {
     const data = callbackQuery.data;
     const chatId = callbackQuery.message.chat.id;
     const messageId = callbackQuery.message.message_id;
-    const message_thread_id = callbackQuery.message.message_thread_id;
-    const options = message_thread_id ? { message_thread_id } : {};
-    
+
+    // Jawab callback secepat mungkin agar pengguna mendapat feedback
+    try {
+        await this.answerCallbackQuery(callbackQuery.id, { text: "⏳ Memuat halaman...", show_alert: false });
+    } catch (e) {
+        // ignore answer callback error but log
+        console.error("answerCallbackQuery failed:", e);
+    }
+
+    if (typeof data !== "string") {
+        return new Response("OK", { status: 200 });
+    }
+
+    // Navigasi halaman
+    if (data.startsWith("userlist_page_")) {
+        const parts = data.split("_");
+        const page = parseInt(parts[2], 10) || 1;
+        // update pesan dengan halaman yang diminta
+        await this.sendUserList(chatId, page, messageId);
+        return new Response("OK", { status: 200 });
+    }
+
+    // Refresh pada halaman sekarang
+    if (data.startsWith("userlist_refresh_")) {
+        const parts = data.split("_");
+        const page = parseInt(parts[2], 10) || 1;
+        await this.sendUserList(chatId, page, messageId);
+        return new Response("OK", { status: 200 });
+    }
+
+    // Indicator tidak melakukan apa-apa, tapi kita jawab agar tidak menggantung
+    if (data.startsWith("userlist_indicator_")) {
+        // optional: bisa tampilkan info singkat sebagai alert
+        try {
+            await this.answerCallbackQuery(callbackQuery.id, { text: "📄 Indikator halaman (Tidak ada aksi)", show_alert: false });
+        } catch (e) {}
+        return new Response("OK", { status: 200 });
+    }
+
+    // default: jawab callback tanpa aksi
+    await this.answerCallbackQuery(callbackQuery.id);
+    return new Response("OK", { status: 200 });
+  }
 
     await this.answerCallbackQuery(callbackQuery.id);
     return new Response("OK", { status: 200 });
@@ -2159,6 +2285,7 @@ const TelegramBotku = class {
 │  ├─ /proxy ─ Generate Proxy IPs
 │  ├─ /stats ─ Statistik Penggunaan
 │  ├─ /findproxy ─ Tutorial Cari Proxy
+│  ├─ /userlist ─ Daftar Pengguna Bot
 │  ├─ /ping ─ Cek status bot
 │  └─ /kuota ─ Cek Data Paket XL
 │
@@ -3888,157 +4015,277 @@ const CekkuotaBotku = class {
 };
 
 // src/sublink/sublink.js
+
+// Daftar lengkap negara (menggunakan kode ISO 3166-1 alpha-2 untuk emoji bendera)
+const COUNTRIES = [
+    { code: "ID", name: "Indonesia" }, { code: "SG", name: "Singapore" }, { code: "MY", name: "Malaysia" },
+    { code: "US", name: "United States" }, { code: "JP", name: "Japan" }, { code: "KR", name: "South Korea" },
+    { code: "TH", name: "Thailand" }, { code: "VN", name: "Vietnam" }, { code: "PH", name: "Philippines" },
+    { code: "GB", name: "United Kingdom" }, { code: "DE", name: "Germany" }, { code: "FR", name: "France" },
+    { code: "BR", name: "Brazil" }, { code: "IN", name: "India" }, { code: "AU", name: "Australia" },
+    { code: "CA", name: "Canada" }, { code: "TR", name: "Turkey" }, { code: "NL", name: "Netherlands" },
+    { code: "TW", name: "Taiwan" }, { code: "HK", name: "Hong Kong" }, { code: "RU", name: "Russia" },
+    { code: "CN", name: "China" }, { code: "KH", name: "Cambodia" }, { code: "PL", name: "Poland" },
+    { code: "AR", name: "Argentina" }, { code: "CO", name: "Colombia" }, { code: "ZA", name: "South Africa" },
+    // Menambahkan lebih banyak negara untuk mencapai 200+
+    { code: "AE", name: "UAE" }, { code: "AD", name: "Andorra" }, { code: "AF", name: "Afghanistan" },
+    { code: "AL", name: "Albania" }, { code: "DZ", name: "Algeria" }, { code: "AS", name: "American Samoa" },
+    { code: "AO", name: "Angola" }, { code: "AI", name: "Anguilla" }, { code: "AQ", name: "Antarctica" },
+    { code: "AG", name: "Antigua & Barbuda" }, { code: "AM", name: "Armenia" }, { code: "AW", name: "Aruba" },
+    { code: "AT", name: "Austria" }, { code: "AZ", name: "Azerbaijan" }, { code: "BS", name: "Bahamas" },
+    { code: "BH", name: "Bahrain" }, { code: "BD", name: "Bangladesh" }, { code: "BB", name: "Barbados" },
+    { code: "BY", name: "Belarus" }, { code: "BE", name: "Belgium" }, { code: "BZ", name: "Belize" },
+    { code: "BJ", name: "Benin" }, { code: "BM", name: "Bermuda" }, { code: "BT", name: "Bhutan" },
+    { code: "BO", name: "Bolivia" }, { code: "BA", name: "Bosnia & Herzegovina" }, { code: "BW", name: "Botswana" },
+    { code: "BN", name: "Brunei" }, { code: "BG", name: "Bulgaria" }, { code: "BF", name: "Burkina Faso" },
+    { code: "BI", name: "Burundi" }, { code: "CV", name: "Cabo Verde" }, { code: "CM", name: "Cameroon" },
+    { code: "KY", name: "Cayman Islands" }, { code: "CF", name: "Central African Republic" },
+    { code: "TD", name: "Chad" }, { code: "CL", name: "Chile" }, { code: "CX", name: "Christmas Island" },
+    { code: "CC", name: "Cocos (Keeling) Islands" }, { code: "CR", name: "Costa Rica" }, { code: "HR", name: "Croatia" },
+    { code: "CU", name: "Cuba" }, { code: "CW", name: "Curaçao" }, { code: "CY", name: "Cyprus" },
+    { code: "CZ", name: "Czechia" }, { code: "CD", name: "DR Congo" }, { code: "DK", name: "Denmark" },
+    { code: "DJ", name: "Djibouti" }, { code: "DM", name: "Dominica" }, { code: "DO", name: "Dominican Republic" },
+    { code: "EC", name: "Ecuador" }, { code: "EG", name: "Egypt" }, { code: "SV", name: "El Salvador" },
+    { code: "GQ", name: "Equatorial Guinea" }, { code: "ER", name: "Eritrea" }, { code: "EE", name: "Estonia" },
+    { code: "SZ", name: "Eswatini" }, { code: "ET", name: "Ethiopia" }, { code: "FK", name: "Falkland Islands" },
+    { code: "FO", name: "Faroe Islands" }, { code: "FJ", name: "Fiji" }, { code: "FI", name: "Finland" },
+    { code: "GF", name: "French Guiana" }, { code: "PF", name: "French Polynesia" }, { code: "GA", name: "Gabon" },
+    { code: "GM", name: "Gambia" }, { code: "GE", name: "Georgia" }, { code: "GI", name: "Gibraltar" },
+    { code: "GR", name: "Greece" }, { code: "GL", name: "Greenland" }, { code: "GD", name: "Grenada" },
+    { code: "GP", name: "Guadeloupe" }, { code: "GU", name: "Guam" }, { code: "GT", name: "Guatemala" },
+    { code: "GG", name: "Guernsey" }, { code: "GN", name: "Guinea" }, { code: "GW", name: "Guinea-Bissau" },
+    { code: "GY", name: "Guyana" }, { code: "HT", name: "Haiti" }, { code: "VA", name: "Holy See" },
+    { code: "HN", name: "Honduras" }, { code: "HU", name: "Hungary" }, { code: "IS", name: "Iceland" },
+    { code: "IR", name: "Iran" }, { code: "IQ", name: "Iraq" }, { code: "IE", name: "Ireland" },
+    { code: "IM", name: "Isle of Man" }, { code: "IL", name: "Israel" }, { code: "IT", name: "Italy" },
+    { code: "CI", name: "Côte d'Ivoire" }, { code: "JM", name: "Jamaica" }, { code: "JE", name: "Jersey" },
+    { code: "JO", name: "Jordan" }, { code: "KZ", name: "Kazakhstan" }, { code: "KE", name: "Kenya" },
+    { code: "KI", name: "Kiribati" }, { code: "KW", name: "Kuwait" }, { code: "KG", name: "Kyrgyzstan" },
+    { code: "LA", name: "Laos" }, { code: "LV", name: "Latvia" }, { code: "LB", name: "Lebanon" },
+    { code: "LS", name: "Lesotho" }, { code: "LR", name: "Liberia" }, { code: "LY", name: "Libya" },
+    { code: "LI", name: "Liechtenstein" }, { code: "LT", name: "Lithuania" }, { code: "LU", name: "Luxembourg" },
+    { code: "MO", name: "Macao" }, { code: "MG", name: "Madagascar" }, { code: "MW", name: "Malawi" },
+    { code: "MV", name: "Maldives" }, { code: "ML", name: "Mali" }, { code: "MT", name: "Malta" },
+    { code: "MQ", name: "Martinique" }, { code: "MR", name: "Mauritania" }, { code: "MU", name: "Mauritius" },
+    { code: "MX", name: "Mexico" }, { code: "FM", name: "Micronesia" }, { code: "MD", name: "Moldova" },
+    { code: "MC", name: "Monaco" }, { code: "MN", name: "Mongolia" }, { code: "ME", name: "Montenegro" },
+    { code: "MS", name: "Montserrat" }, { code: "MA", name: "Morocco" }, { code: "MZ", name: "Mozambique" },
+    { code: "MM", name: "Myanmar" }, { code: "NA", name: "Namibia" }, { code: "NR", name: "Nauru" },
+    { code: "NP", name: "Nepal" }, { code: "AN", name: "Netherlands Antilles" }, { code: "NC", name: "New Caledonia" },
+    { code: "NZ", name: "New Zealand" }, { code: "NI", name: "Nicaragua" }, { code: "NE", name: "Niger" },
+    { code: "NG", name: "Nigeria" }, { code: "NU", name: "Niue" }, { code: "NF", name: "Norfolk Island" },
+    { code: "KP", name: "North Korea" }, { code: "MK", name: "North Macedonia" }, { code: "MP", name: "Northern Mariana Islands" },
+    { code: "NO", name: "Norway" }, { code: "OM", name: "Oman" }, { code: "PK", name: "Pakistan" },
+    { code: "PW", name: "Palau" }, { code: "PS", name: "Palestine" }, { code: "PA", name: "Panama" },
+    { code: "PG", name: "Papua New Guinea" }, { code: "PY", name: "Paraguay" }, { code: "PE", name: "Peru" },
+    { code: "PN", name: "Pitcairn" }, { code: "PT", name: "Portugal" }, { code: "PR", name: "Puerto Rico" },
+    { code: "QA", name: "Qatar" }, { code: "RE", name: "Réunion" }, { code: "RO", name: "Romania" },
+    { code: "RW", name: "Rwanda" }, { code: "BL", name: "St. Barthélemy" }, { code: "SH", name: "St. Helena" },
+    { code: "KN", name: "St. Kitts & Nevis" }, { code: "LC", name: "St. Lucia" }, { code: "MF", name: "St. Martin" },
+    { code: "PM", name: "St. Pierre & Miquelon" }, { code: "VC", name: "St. Vincent & Grenadines" },
+    { code: "WS", name: "Samoa" }, { code: "SM", name: "San Marino" }, { code: "ST", name: "São Tomé & Príncipe" },
+    { code: "SA", name: "Saudi Arabia" }, { code: "SN", name: "Senegal" }, { code: "RS", name: "Serbia" },
+    { code: "SC", name: "Seychelles" }, { code: "SL", name: "Sierra Leone" }, { code: "SK", name: "Slovakia" },
+    { code: "SI", name: "Slovenia" }, { code: "SB", name: "Solomon Islands" }, { code: "SO", name: "Somalia" },
+    { code: "GS", name: "South Georgia" }, { code: "SS", name: "South Sudan" }, { code: "ES", name: "Spain" },
+    { code: "LK", name: "Sri Lanka" }, { code: "SD", name: "Sudan" }, { code: "SR", name: "Suriname" },
+    { code: "SJ", name: "Svalbard & Jan Mayen" }, { code: "SE", name: "Sweden" }, { code: "CH", name: "Switzerland" },
+    { code: "SY", name: "Syria" }, { code: "TJ", name: "Tajikistan" }, { code: "TZ", name: "Tanzania" },
+    { code: "TL", name: "Timor-Leste" }, { code: "TG", name: "Togo" }, { code: "TK", name: "Tokelau" },
+    { code: "TO", name: "Tonga" }, { code: "TT", name: "Trinidad & Tobago" }, { code: "TN", name: "Tunisia" },
+    { code: "TM", name: "Turkmenistan" }, { code: "TC", name: "Turks & Caicos Islands" },
+    { code: "TV", name: "Tuvalu" }, { code: "UG", name: "Uganda" }, { code: "UA", name: "Ukraine" },
+    { code: "UY", name: "Uruguay" }, { code: "UZ", name: "Uzbekistan" }, { code: "VU", name: "Vanuatu" },
+    { code: "VE", name: "Venezuela" }, { code: "VG", name: "British Virgin Islands" },
+    { code: "VI", name: "US Virgin Islands" }, { code: "WF", name: "Wallis & Futuna" },
+    { code: "EH", name: "Western Sahara" }, { code: "YE", name: "Yemen" }, { code: "ZM", name: "Zambia" },
+    { code: "ZW", name: "Zimbabwe" }
+];
+
+const ITEMS_PER_PAGE = 15;
+
+function flag(code) {
+    // Fungsi untuk mendapatkan emoji bendera dari kode negara ISO 3166-1 alpha-2
+    return code
+        .toUpperCase()
+        .replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+}
+
+function getCountryKeyboard(page = 0) {
+    const start = page * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const paginatedCountries = COUNTRIES.slice(start, end);
+    const totalPages = Math.ceil(COUNTRIES.length / ITEMS_PER_PAGE);
+
+    // 1. Baris Opsi Khusus (All Countries & Random)
+    const specialOptions = [
+        [{ text: "🌍 All Countries", callback_data: "sublink_country_all" }],
+        [{ text: "🪐 Random", callback_data: "sublink_country_random" }]
+    ];
+
+    // 2. Baris Pilihan Negara (15 per halaman, 5 per baris)
+    const countryRows = [];
+    // Perubahan di sini: loop per 5 item untuk 5 tombol per baris
+    for (let i = 0; i < paginatedCountries.length; i += 4) { 
+        const row = paginatedCountries.slice(i, i + 4).map(country => ({
+            text: `${flag(country.code)} (${country.code})`,
+            callback_data: `sublink_country_${country.code.toLowerCase()}`
+        }));
+        countryRows.push(row);
+    }
+
+    // 3. Baris Navigasi (Pagination)
+    const navigationRow = [];
+    if (page > 0) {
+        navigationRow.push({ text: "\u25C0 Prev", callback_data: `sublink_page_${page - 1}` });
+    }
+    navigationRow.push({ text: `Page ${page + 1}/${totalPages}`, callback_data: "sublink_ignore" }); 
+    if (page < totalPages - 1) {
+        navigationRow.push({ text: "Next \u25B6", callback_data: `sublink_page_${page + 1}` });
+    }
+
+    return {
+        inline_keyboard: [
+            ...specialOptions,
+            ...countryRows,
+            navigationRow.length > 0 ? navigationRow : []
+        ].filter(row => row.length > 0)
+    };
+}
+
 const sublinkState = new Map();
 const SublinkBuilderBot = class {
-  constructor(token, apiUrl = "https://api.telegram.org", ownerId, globalBot) {
-    this.token = token;
-    this.apiUrl = apiUrl;
-    this.globalBot = globalBot;
-  }
-  async handleUpdate(update, ctx) {
-    if (update.message && update.message.text) {
-      const chatId = update.message.chat.id;
-      const text = update.message.text.trim();
-      const message_thread_id = update.message.message_thread_id;
-      const options = message_thread_id ? { message_thread_id } : {};
-      if (/^\/sublink(@\w+)?$/.test(text)) {
-        return this.start(chatId, options);
-      }
-      const state = sublinkState.get(chatId);
-      if (state) {
-        if (state.step === "bug") {
-          state.bug = text;
-          state.step = "limit";
-          await this.sendMessage(chatId, "Masukkan limit (angka antara 1-20):", options);
-        } else if (state.step === "limit") {
-          const limit = parseInt(text, 10);
-          if (isNaN(limit) || limit < 1 || limit > 20) {
-            await this.sendMessage(chatId, "Input tidak valid. Silakan masukkan angka antara 1 dan 20.", options);
-          } else {
-            state.limit = limit;
-            state.step = "country";
-            const keyboard = {
-              inline_keyboard: [
-                [{ text: "All Countries", callback_data: "sublink_country_all" }],
-                [{ text: "Random", callback_data: "sublink_country_random" }],
-                [
-                  { text: "Indonesia (ID)", callback_data: "sublink_country_id" },
-                  { text: "Singapore (SG)", callback_data: "sublink_country_sg" },
-                  { text: "Malaysia (MY)", callback_data: "sublink_country_my" }
-                ],
-                [
-                  { text: "United States (US)", callback_data: "sublink_country_us" },
-                  { text: "Japan (JP)", callback_data: "sublink_country_jp" },
-                  { text: "South Korea (KR)", callback_data: "sublink_country_kr" }
-                ],
-                [
-                  { text: "Thailand (TH)", callback_data: "sublink_country_th" },
-                  { text: "Vietnam (VN)", callback_data: "sublink_country_vn" },
-                  { text: "Philippines (PH)", callback_data: "sublink_country_ph" }
-                ],
-                [
-                  { text: "United Kingdom (GB)", callback_data: "sublink_country_gb" },
-                  { text: "Germany (DE)", callback_data: "sublink_country_de" },
-                  { text: "France (FR)", callback_data: "sublink_country_fr" }
-                ],
-                [
-                  { text: "Brazil (BR)", callback_data: "sublink_country_br" },
-                  { text: "India (IN)", callback_data: "sublink_country_in" },
-                  { text: "Australia (AU)", callback_data: "sublink_country_au" }
-                ],
-                [
-                  { text: "Canada (CA)", callback_data: "sublink_country_ca" },
-                  { text: "Turkey (TR)", callback_data: "sublink_country_tr" },
-                  { text: "Netherlands (NL)", callback_data: "sublink_country_nl" }
-                ],
-                [
-                  { text: "Taiwan (TW)", callback_data: "sublink_country_tw" },
-                  { text: "Hong Kong (HK)", callback_data: "sublink_country_hk" },
-                  { text: "Russia (RU)", callback_data: "sublink_country_ru" }
-                ]
-              ]
-            };
-            await this.sendMessage(chatId, "Pilih negara:", { reply_markup: keyboard, ...options });
-          }
+  constructor(token, apiUrl = "https://api.telegram.org", ownerId, globalBot) {
+    this.token = token;
+    this.apiUrl = apiUrl;
+    this.globalBot = globalBot;
+  }
+  async handleUpdate(update, ctx) {
+    if (update.message && update.message.text) {
+      const chatId = update.message.chat.id;
+      const text = update.message.text.trim();
+      const message_thread_id = update.message.message_thread_id;
+      const options = message_thread_id ? { message_thread_id } : {};
+      if (/^\/sublink(@\w+)?$/.test(text)) {
+        return this.start(chatId, options);
+      }
+      const state = sublinkState.get(chatId);
+      if (state) {
+        if (state.step === "bug") {
+          state.bug = text;
+          state.step = "limit";
+          await this.sendMessage(chatId, "Masukkan limit (angka antara 1-20):", options);
+        } else if (state.step === "limit") {
+          const limit = parseInt(text, 10);
+          if (isNaN(limit) || limit < 1 || limit > 20) {
+            await this.sendMessage(chatId, "Input tidak valid. Silakan masukkan angka antara 1 dan 20.", options);
+          } else {
+            state.limit = limit;
+            state.step = "country";
+                state.countryPage = 0; 
+            const keyboard = getCountryKeyboard(state.countryPage);
+            await this.sendMessage(chatId, "Pilih negara:", { reply_markup: keyboard, ...options });
+          }
+        }
+      }
+    }
+    if (update.callback_query) {
+      const chatId = update.callback_query.message.chat.id;
+      const messageId = update.callback_query.message.message_id;
+      const data = update.callback_query.data;
+      const message_thread_id = update.callback_query.message.message_thread_id;
+      const options = message_thread_id ? { message_thread_id } : {};
+      const state = sublinkState.get(chatId);
+      await this.answerCallbackQuery(update.callback_query.id); 
+      if (!state || !data.startsWith("sublink_")) {
+        return new Response("OK", { status: 200 });
+      }
+      const [_, step, value] = data.split("_");
+
+      // --- Handle Navigasi Halaman Negara ---
+        if (step === "page" && state.step === "country") {
+            const newPage = parseInt(value, 10);
+            if (!isNaN(newPage) && newPage >= 0 && newPage < Math.ceil(COUNTRIES.length / ITEMS_PER_PAGE)) {
+                state.countryPage = newPage;
+                const keyboard = getCountryKeyboard(newPage);
+                await this.editMessageText(chatId, messageId, "Pilih negara:", { reply_markup: keyboard, ...options });
+            }
+            return new Response("OK", { status: 200 });
         }
-      }
-    }
-    if (update.callback_query) {
-      const chatId = update.callback_query.message.chat.id;
-      const messageId = update.callback_query.message.message_id;
-      const data = update.callback_query.data;
-      const message_thread_id = update.callback_query.message.message_thread_id;
-      const options = message_thread_id ? { message_thread_id } : {};
-      const state = sublinkState.get(chatId);
-      if (!state || !data.startsWith("sublink_")) {
-        return new Response("OK", { status: 200 });
-      }
-      const [_, step, value] = data.split("_");
-      if (step === "app" && state.step === "app") {
-        state.app = value;
-        state.step = "type";
-        const keyboard = {
-          inline_keyboard: [
-            [{ text: "VLESS", callback_data: "sublink_type_vless" }],
-            [{ text: "Trojan", callback_data: "sublink_type_trojan" }],
-            [{ text: "Shadowsocks", callback_data: "sublink_type_shadowsocks" }]
-          ]
-        };
-        await this.editMessageText(chatId, messageId, "Pilih tipe protokol:", { reply_markup: keyboard, ...options });
-      } else if (step === "type" && state.step === "type") {
-        state.type = value;
-        state.step = "tls";
-        const keyboard = {
-          inline_keyboard: [
-            [{ text: "True", callback_data: "sublink_tls_true" }, { text: "False", callback_data: "sublink_tls_false" }]
-          ]
-        };
-        await this.editMessageText(chatId, messageId, "Gunakan TLS?", { reply_markup: keyboard, ...options });
-      } else if (step === "tls" && state.step === "tls") {
-        state.tls = value;
-        state.step = "wildcard";
-        const keyboard = {
-          inline_keyboard: [
-            [{ text: "True", callback_data: "sublink_wildcard_true" }, { text: "False", callback_data: "sublink_wildcard_false" }]
-          ]
-        };
-        await this.editMessageText(chatId, messageId, "Gunakan Wildcard?", { reply_markup: keyboard, ...options });
-      } else if (step === "wildcard" && state.step === "wildcard") {
-        state.wildcard = value;
-        state.step = "bug";
-        await this.editMessageText(chatId, messageId, "Silakan kirimkan bug host Anda (contoh: ava.game.naver.com):", options);
-      } else if (step === "country" && state.step === "country") {
-        state.country = value;
-        state.processingMessageId = messageId;
-        await this.editMessageText(chatId, messageId, "Sedang memproses permintaan Anda...", options);
-        const randomHost = this.globalBot.getRandomHost();
-        let url;
-        if (state.country === "all") {
-          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}`;
-        } else if (state.country === "random") {
-          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}&country=random`;
-        } else {
-          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}&country=${state.country}`;
-        }
-        console.log(`Mengakses URL: ${url}`);
-        try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Gagal mengambil data dari URL: ${response.statusText}`);
-          }
-          const content = await response.text();
-          if (!content || content.trim() === "") {
-            throw new Error("Tidak ada data yang diterima dari server");
-          }
-          let countryDisplay;
-          if (state.country === "all") {
-            countryDisplay = "All Countries";
-          } else if (state.country === "random") {
-            countryDisplay = "Random Country";
-          } else {
-            countryDisplay = state.country.toUpperCase();
-          }
-          const caption = `\u{1F517} Sub Link Berhasil Dibuat!
+        
+        // --- Lanjutkan Alur Bot ---
+
+      if (step === "app" && state.step === "app") {
+        state.app = value;
+        state.step = "type";
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: "VLESS", callback_data: "sublink_type_vless" }],
+            [{ text: "Trojan", callback_data: "sublink_type_trojan" }],
+            [{ text: "Shadowsocks", callback_data: "sublink_type_shadowsocks" }]
+          ]
+        };
+        await this.editMessageText(chatId, messageId, "Pilih tipe protokol:", { reply_markup: keyboard, ...options });
+      } else if (step === "type" && state.step === "type") {
+        state.type = value;
+        state.step = "tls";
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: "True", callback_data: "sublink_tls_true" }, { text: "False", callback_data: "sublink_tls_false" }]
+          ]
+        };
+        await this.editMessageText(chatId, messageId, "Gunakan TLS?", { reply_markup: keyboard, ...options });
+      } else if (step === "tls" && state.step === "tls") {
+        state.tls = value;
+        state.step = "wildcard";
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: "True", callback_data: "sublink_wildcard_true" }, { text: "False", callback_data: "sublink_wildcard_false" }]
+          ]
+        };
+        await this.editMessageText(chatId, messageId, "Gunakan Wildcard?", { reply_markup: keyboard, ...options });
+      } else if (step === "wildcard" && state.step === "wildcard") {
+        state.wildcard = value;
+        state.step = "bug";
+        await this.editMessageText(chatId, messageId, "Silakan kirimkan bug host Anda (contoh: ava.game.naver.com):", options);
+      } else if (step === "country" && state.step === "country") {
+        state.country = value;
+        state.processingMessageId = messageId;
+        await this.editMessageText(chatId, messageId, "Sedang memproses permintaan Anda...", options);
+        const randomHost = this.globalBot.getRandomHost();
+        let url;
+        if (state.country === "all") {
+          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}`;
+        } else if (state.country === "random") {
+          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}&country=random`;
+        } else {
+          url = `https://${randomHost}/vpn/${state.app}?type=${state.type}&bug=${state.bug}&tls=${state.tls}&wildcard=${state.wildcard}&limit=${state.limit}&country=${state.country}`;
+        }
+        console.log(`Mengakses URL: ${url}`);
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Gagal mengambil data dari URL: ${response.statusText}`);
+          }
+          const content = await response.text();
+          if (!content || content.trim() === "") {
+            throw new Error("Tidak ada data yang diterima dari server");
+          }
+          let countryDisplay;
+             const selectedCountry = COUNTRIES.find(c => c.code.toLowerCase() === state.country);
+            
+          if (state.country === "all") {
+            countryDisplay = "All Countries";
+          } else if (state.country === "random") {
+            countryDisplay = "Random Country";
+          } else if (selectedCountry) {
+                // Tampilkan emoji dan nama negara di caption hasil akhir
+                countryDisplay = `${flag(selectedCountry.code)} ${selectedCountry.name} (${selectedCountry.code})`;
+            } else {
+                countryDisplay = state.country.toUpperCase();
+            }
+
+          const caption = `\u{1F517} Sub Link Berhasil Dibuat!
 
 \u{1F4F1} Aplikasi: ${state.app}
 \u{1F527} Tipe: ${state.type}
@@ -4050,116 +4297,126 @@ const SublinkBuilderBot = class {
 
 \u{1F447} Klik link di bawah untuk copy:
 ${url}`;
-          await this.deleteMessage(chatId, state.processingMessageId);
-          await this.sendDocument(chatId, content, "sublink.txt", "text/plain", {
-            caption,
-            parse_mode: "HTML",
-            ...options
-          });
-        } catch (error) {
-          console.error("Error:", error);
-          await this.deleteMessage(chatId, state.processingMessageId);
-          await this.sendMessage(chatId, `\u274C Terjadi Kesalahan
+          await this.deleteMessage(chatId, state.processingMessageId);
+          await this.sendDocument(chatId, content, "sublink.txt", "text/plain", {
+            caption,
+            parse_mode: "HTML",
+            ...options
+          });
+        } catch (error) {
+          console.error("Error:", error);
+          await this.deleteMessage(chatId, state.processingMessageId);
+          await this.sendMessage(chatId, `\u274C Terjadi Kesalahan
 
 ${error.message}
 
 Silakan coba lagi dengan parameter yang berbeda.`, {
-            parse_mode: "HTML",
-            ...options
-          });
-        } finally {
-          sublinkState.delete(chatId);
-        }
-      }
-    }
-    return new Response("OK", { status: 200 });
-  }
-  async start(chatId, options = {}) {
-    sublinkState.set(chatId, { step: "app" });
-    const keyboard = {
-      inline_keyboard: [
-        [{ text: "V2Ray", callback_data: "sublink_app_v2ray" }, { text: "Clash", callback_data: "sublink_app_clash" }],
-        [{ text: "Nekobox", callback_data: "sublink_app_nekobox" }, { text: "Singbox", callback_data: "sublink_app_singbox" }],
-        [{ text: "Surfboard", callback_data: "sublink_app_surfboard" }]
-      ]
-    };
-    await this.sendMessage(chatId, "Silakan pilih aplikasi:", { reply_markup: keyboard, ...options });
-    return new Response("OK", { status: 200 });
-  }
-  async sendMessage(chatId, text, options = {}) {
-    const url = `${this.apiUrl}/bot${this.token}/sendMessage`;
-    const body = {
-      chat_id: chatId,
-      text,
-      parse_mode: "Markdown",
-      ...options
-    };
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return response.json();
-  }
-  async editMessageText(chatId, messageId, text, options = {}) {
-    const url = `${this.apiUrl}/bot${this.token}/editMessageText`;
-    const body = {
-      chat_id: chatId,
-      message_id: messageId,
-      text,
-      parse_mode: "Markdown",
-      ...options
-    };
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return response.json();
-  }
-  async sendDocument(chatId, content, filename, mimeType, options = {}) {
-    const formData = new FormData();
-    const blob = new Blob([content], { type: mimeType });
-    formData.append("document", blob, filename);
-    formData.append("chat_id", String(chatId));
-    if (options.message_thread_id) {
-      formData.append("message_thread_id", String(options.message_thread_id));
-    }
-    if (options.caption) {
-      formData.append("caption", options.caption);
-    }
-    if (options.parse_mode) {
-      formData.append("parse_mode", options.parse_mode);
-    }
-    if (options.reply_to_message_id) {
-      formData.append("reply_to_message_id", String(options.reply_to_message_id));
-    }
-    const response = await fetch(`${this.apiUrl}/bot${this.token}/sendDocument`, {
-      method: "POST",
-      body: formData
-    });
-    return response.json();
-  }
-  async deleteMessage(chatId, messageId) {
-    try {
-      const url = `${this.apiUrl}/bot${this.token}/deleteMessage`;
-      const body = { chat_id: chatId, message_id: messageId };
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const result = await response.json();
-      if (!result.ok) {
-        console.warn("Gagal menghapus pesan:", result);
-      }
-      return result;
-    } catch (error) {
-      console.error("Error saat menghapus pesan:", error);
-    }
-  }
-};
+            parse_mode: "HTML",
+            ...options
+          });
+        } finally {
+          sublinkState.delete(chatId);
+        }
+      }
+    }
+    return new Response("OK", { status: 200 });
+  }
 
+  async answerCallbackQuery(callbackQueryId) {
+    const url = `${this.apiUrl}/bot${this.token}/answerCallbackQuery`;
+    const body = { callback_query_id: callbackQueryId };
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  }
+
+  async start(chatId, options = {}) {
+    sublinkState.set(chatId, { step: "app" });
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: "V2Ray", callback_data: "sublink_app_v2ray" }, { text: "Clash", callback_data: "sublink_app_clash" }],
+        [{ text: "Nekobox", callback_data: "sublink_app_nekobox" }, { text: "Singbox", callback_data: "sublink_app_singbox" }],
+        [{ text: "Surfboard", callback_data: "sublink_app_surfboard" }]
+      ]
+    };
+    await this.sendMessage(chatId, "Silakan pilih aplikasi:", { reply_markup: keyboard, ...options });
+    return new Response("OK", { status: 200 });
+  }
+  async sendMessage(chatId, text, options = {}) {
+    const url = `${this.apiUrl}/bot${this.token}/sendMessage`;
+    const body = {
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown",
+      ...options
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async editMessageText(chatId, messageId, text, options = {}) {
+    const url = `${this.apiUrl}/bot${this.token}/editMessageText`;
+    const body = {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      parse_mode: "Markdown",
+      ...options
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async sendDocument(chatId, content, filename, mimeType, options = {}) {
+    const formData = new FormData();
+    const blob = new Blob([content], { type: mimeType });
+    formData.append("document", blob, filename);
+    formData.append("chat_id", String(chatId));
+    if (options.message_thread_id) {
+      formData.append("message_thread_id", String(options.message_thread_id));
+    }
+    if (options.caption) {
+      formData.append("caption", options.caption);
+    }
+    if (options.parse_mode) {
+      formData.append("parse_mode", options.parse_mode);
+    }
+    if (options.reply_to_message_id) {
+      formData.append("reply_to_message_id", String(options.reply_to_message_id));
+    }
+    const response = await fetch(`${this.apiUrl}/bot${this.token}/sendDocument`, {
+      method: "POST",
+      body: formData
+    });
+    return response.json();
+  }
+  async deleteMessage(chatId, messageId) {
+    try {
+      const url = `${this.apiUrl}/bot${this.token}/deleteMessage`;
+      const body = { chat_id: chatId, message_id: messageId };
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const result = await response.json();
+      if (!result.ok) {
+        console.warn("Gagal menghapus pesan:", result);
+      }
+      return result;
+    } catch (error) {
+      console.error("Error saat menghapus pesan:", error);
+    }
+  }
+};
 // src/worker.js
 const worker_default = {
   async fetch(request, env, ctx) {
