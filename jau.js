@@ -1214,10 +1214,6 @@ const Converterbot = class {
             return new Response("OK", { status: 200 });
         }
 
-        if (text.startsWith("/userlist")) {
-            await this.sendUserList(chatId);
-            return new Response("OK", { status: 200 });
-        }
     }
 
     
@@ -1697,72 +1693,11 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
   }
 
-  
-  async sendUserList(chatId, page = 1, messageId = null) {
-    try {
-        const allUsers = await this.getAllUsers();
-        const users = allUsers.filter(u => u && u.id);
-        const totalUsers = users.length;
-        const usersPerPage = 10;
-        const totalPages = Math.ceil(totalUsers / usersPerPage) || 1;
-
-        if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
-
-        const start = (page - 1) * usersPerPage;
-        const end = start + usersPerPage;
-        const pagedUsers = users.slice(start, end);
-
-        let userListText = `🎯 *DAFTAR PENGGUNA*\n╔═══════════════════╗\n` +
-                           `📊 Total: ${totalUsers} pengguna\n` +
-                           `📄 Halaman: ${page}/${totalPages}\n` +
-                           `╚═══════════════════╝\n\n`;
-
-        pagedUsers.forEach((user, index) => {
-            const userNumber = start + index + 1;
-            const username = user.username ? `@${user.username}` : (user.first_name || 'Tanpa Nama');
-            userListText += `👤 ${userNumber}. ${username}\n🆔 ID: \`${user.id}\`\n\n`;
-        });
-
-        const keyboard = { inline_keyboard: [[]] };
-        if (page > 1) {
-            keyboard.inline_keyboard[0].push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
-        }
-        keyboard.inline_keyboard[0].push({ text: "🔄 Refresh", callback_data: `userlist_page_1` });
-        if (page < totalPages) {
-            keyboard.inline_keyboard[0].push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
-        }
-
-        const options = { parse_mode: 'Markdown', reply_markup: keyboard };
-
-        if (messageId) {
-            await this.editMessageText(chatId, messageId, userListText, options);
-        } else {
-            await this.sendMessage(chatId, userListText, options);
-        }
-    } catch (error) {
-        console.error("Failed to send user list:", error);
-        const errorMessage = this.formatErrorMessage("Gagal memperbarui daftar pengguna.");
-        if (messageId) {
-            await this.editMessageText(chatId, messageId, errorMessage, {});
-        } else {
-            await this.sendMessage(chatId, errorMessage);
-        }
-    }
-  }
-
   async handleCallbackQuery(callbackQuery) {
     const data = callbackQuery.data;
     const chatId = callbackQuery.message.chat.id;
     const messageId = callbackQuery.message.message_id;
     
-    if (data.startsWith("userlist_page_")) {
-        const page = parseInt(data.split("_")[2], 10);
-        await this.sendUserList(chatId, page, messageId);
-        await this.answerCallbackQuery(callbackQuery.id);
-        return new Response("OK", { status: 200 });
-    }
-
     await this.answerCallbackQuery(callbackQuery.id);
     return new Response("OK", { status: 200 });
   }
@@ -2221,7 +2156,6 @@ const TelegramBotku = class {
 │  ├─ /proxy ─ Generate Proxy IPs
 │  ├─ /stats ─ Statistik Penggunaan
 │  ├─ /findproxy ─ Tutorial Cari Proxy
-│  ├─ /userlist ─ Daftar Pengguna Bot
 │  ├─ /ping ─ Cek status bot
 │  └─ /kuota ─ Cek Data Paket XL
 │
