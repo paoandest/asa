@@ -1698,7 +1698,6 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
   }
 
   
-  
   async sendUserList(chatId, page = 1, messageId = null) {
     try {
         const allUsers = await this.getAllUsers();
@@ -1725,36 +1724,10 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
             userListText += `👤 ${userNumber}. ${username}\n🆔 ID: \`${user.id}\`\n\n`;
         });
 
-        // row navigasi (Prev | Refresh | Next)
-        const navRow = [];
-        if (page > 1) navRow.push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
-        navRow.push({ text: "🔄 Refresh", callback_data: `userlist_refresh_${page}` });
-        if (page < totalPages) navRow.push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
-
-        // indikator halaman di baris kedua (tanpa aksi)
-        const indicatorRow = [{ text: `📄 Halaman ${page} / ${totalPages}`, callback_data: `userlist_indicator_${page}_${totalPages}` }];
-
-        const keyboard = { inline_keyboard: [navRow, indicatorRow] };
-        const options = { parse_mode: 'Markdown', reply_markup: keyboard };
-
-        if (messageId) {
-            // edit message yang ada
-            await this.editMessageText(chatId, messageId, userListText, options);
-        } else {
-            // kirim pesan baru
-            await this.sendMessage(chatId, userListText, options);
+        const keyboard = { inline_keyboard: [[]] };
+        if (page > 1) {
+            keyboard.inline_keyboard[0].push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
         }
-    } catch (error) {
-        console.error("Failed to send user list:", error);
-        const errorMessage = this.formatErrorMessage("Gagal memperbarui daftar pengguna.");
-        if (messageId) {
-            await this.editMessageText(chatId, messageId, errorMessage, {});
-        } else {
-            await this.sendMessage(chatId, errorMessage);
-        }
-    }
-  }
-
         keyboard.inline_keyboard[0].push({ text: "🔄 Refresh", callback_data: `userlist_page_1` });
         if (page < totalPages) {
             keyboard.inline_keyboard[0].push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
@@ -1778,54 +1751,17 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     }
   }
 
-  
   async handleCallbackQuery(callbackQuery) {
     const data = callbackQuery.data;
     const chatId = callbackQuery.message.chat.id;
     const messageId = callbackQuery.message.message_id;
-
-    // Jawab callback secepat mungkin agar pengguna mendapat feedback
-    try {
-        await this.answerCallbackQuery(callbackQuery.id, { text: "⏳ Memuat halaman...", show_alert: false });
-    } catch (e) {
-        // ignore answer callback error but log
-        console.error("answerCallbackQuery failed:", e);
-    }
-
-    if (typeof data !== "string") {
-        return new Response("OK", { status: 200 });
-    }
-
-    // Navigasi halaman
+    
     if (data.startsWith("userlist_page_")) {
-        const parts = data.split("_");
-        const page = parseInt(parts[2], 10) || 1;
-        // update pesan dengan halaman yang diminta
+        const page = parseInt(data.split("_")[2], 10);
         await this.sendUserList(chatId, page, messageId);
+        await this.answerCallbackQuery(callbackQuery.id);
         return new Response("OK", { status: 200 });
     }
-
-    // Refresh pada halaman sekarang
-    if (data.startsWith("userlist_refresh_")) {
-        const parts = data.split("_");
-        const page = parseInt(parts[2], 10) || 1;
-        await this.sendUserList(chatId, page, messageId);
-        return new Response("OK", { status: 200 });
-    }
-
-    // Indicator tidak melakukan apa-apa, tapi kita jawab agar tidak menggantung
-    if (data.startsWith("userlist_indicator_")) {
-        // optional: bisa tampilkan info singkat sebagai alert
-        try {
-            await this.answerCallbackQuery(callbackQuery.id, { text: "📄 Indikator halaman (Tidak ada aksi)", show_alert: false });
-        } catch (e) {}
-        return new Response("OK", { status: 200 });
-    }
-
-    // default: jawab callback tanpa aksi
-    await this.answerCallbackQuery(callbackQuery.id);
-    return new Response("OK", { status: 200 });
-  }
 
     await this.answerCallbackQuery(callbackQuery.id);
     return new Response("OK", { status: 200 });
@@ -4474,3 +4410,4 @@ const worker_default = {
 export {
   worker_default as default
 };
+ 
