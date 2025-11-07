@@ -127,6 +127,8 @@ function parseShadowsocksLink(link) {
 }
 
 // src/converter/configGenerators.js
+const backToMenuButton = { text: "🏠 Back to Menu", callback_data: "menu_page_0" };
+
 function generateClashConfig(links, isFullConfig = false) {
   const parsedLinks = links.map((link) => parseV2RayLink(link));
   let proxiesConfig = 'proxies:\n';
@@ -1170,7 +1172,7 @@ const Converterbot = class {
     let totalUsers = allUsers.length;
 
     if (totalUsers === 0) {
-        return { messageText: "📭 *Belum ada pengguna yang terdaftar.*\n\n💡 *Pengguna akan otomatis terdaftar ketika berinteraksi dengan bot.*", keyboard: [] };
+        return { messageText: "📭 *Belum ada pengguna yang terdaftar.*\n\n💡 *Pengguna akan otomatis terdaftar ketika berinteraksi dengan bot.*", keyboard: [[backToMenuButton]] };
     }
 
     // Real-time group membership check
@@ -1250,7 +1252,8 @@ ${userListText}`;
     }
 
     keyboard.push([
-        { text: "🔄 Refresh", callback_data: "userlist_page_0" }
+        { text: "🔄 Refresh", callback_data: "userlist_page_0" },
+        backToMenuButton
     ]);
 
     return { messageText, keyboard };
@@ -1469,6 +1472,18 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
           parse_mode: "Markdown",
           ...options 
         });
+
+        await this.sendMessage(
+          chatId,
+          "🎉 *Semua file telah terkirim!*",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[backToMenuButton]]
+            },
+            ...options
+          }
+        );
         
       } catch (error) {
         console.error("Error processing links:", error);
@@ -1494,7 +1509,13 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
       }
       try {
           const configText = await randomconfig();
-          await this.sendMessage(chatId, configText, { parse_mode: "Markdown", ...options });
+          await this.sendMessage(chatId, configText, {
+            parse_mode: "Markdown",
+            ...options,
+            reply_markup: {
+              inline_keyboard: [[backToMenuButton]]
+            }
+          });
       } catch (error) {
           console.error("Error generating random config:", error);
           await this.sendMessage(chatId, `⚠️ Terjadi kesalahan:\n${error.message}`, options);
@@ -2214,7 +2235,13 @@ ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:80?encryption=none&type=
 
 \u{1F468}\u200D\u{1F4BB} Dev : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
-    await this.sendMessage(chatId, configText, { parse_mode: "Markdown", ...options });
+    await this.sendMessage(chatId, configText, {
+      parse_mode: "Markdown",
+      ...options,
+      reply_markup: {
+        inline_keyboard: [[backToMenuButton]]
+      }
+    });
     await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
   } catch (error) {
     console.error(error);
@@ -2325,7 +2352,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
             [
               { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
               { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
-            ]
+            ],
+            [backToMenuButton]
           ]
         },
         ...options 
@@ -2337,7 +2365,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
           [
             { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
             { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
-          ]
+          ],
+          [backToMenuButton]
         ]
       };
       await bot.sendMessage(chatId, msg, { 
@@ -2660,14 +2689,21 @@ _— Tim GEO BOT SERVER_
 
               await this.sendMessage(update.callback_query.message.chat.id, usageText, { 
                 parse_mode: "Markdown", 
-                ...options 
+                ...options,
+                reply_markup: {
+                  inline_keyboard: [[backToMenuButton]]
+                }
               });
               
             } catch (error) {
               await this.sendMessage(
                 update.callback_query.message.chat.id,
                 `⚠️ Gagal mengambil data pemakaian.\n\n_Error:_ ${error.message}`,
-                { parse_mode: "Markdown", ...options }
+                { parse_mode: "Markdown", ...options,
+                  reply_markup: {
+                    inline_keyboard: [[backToMenuButton]]
+                  }
+                }
               );
             }
             break;
@@ -2943,13 +2979,21 @@ _— Tim GEO BOT SERVER_
     usageText += `📦 *Total Data:* ${totalDataTB} TB\n`;
     usageText += `📈 *Total Requests:* ${totalRequests.toLocaleString()}`;
 
-    await this.sendMessage(chatId, usageText, { parse_mode: "Markdown", ...options });
+    await this.sendMessage(chatId, usageText, { parse_mode: "Markdown", ...options,
+      reply_markup: {
+        inline_keyboard: [[backToMenuButton]]
+      } 
+    });
     
   } catch (error) {
     await this.sendMessage(
       chatId,
       `⚠️ Gagal mengambil data pemakaian.\n\n_Error:_ ${error.message}`,
-      { parse_mode: "Markdown", ...options }
+      { parse_mode: "Markdown", ...options,
+        reply_markup: {
+          inline_keyboard: [[backToMenuButton]]
+        }
+      }
     );
   }
   
@@ -3593,7 +3637,13 @@ ss://${toBase642(`none:${uuid}`)}@${DEFAULT_HOST2}:443?encryption=none&type=ws&h
 ss://${toBase642(`none:${uuid}`)}@${DEFAULT_HOST2}:80?encryption=none&type=ws&host=${DEFAULT_HOST2}&path=${path}&security=none&sni=${DEFAULT_HOST2}#${prov}
 \`\`\``;
       }
-      await bot.sendMessage(chatId, configText, { parse_mode: "Markdown", ...options });
+      await bot.sendMessage(chatId, configText, {
+        parse_mode: "Markdown",
+        ...options,
+        reply_markup: {
+          inline_keyboard: [[backToMenuButton]]
+        }
+      });
     } catch (err) {
       console.error("\u274C Error generating config:", err);
       await bot.sendMessage(chatId, `\u26A0\uFE0F *Gagal membuat konfigurasi.*`, { parse_mode: "Markdown", ...options });
@@ -3744,7 +3794,11 @@ const TelegramWildcardBot = class {
         await this.sendMessage(
           chatId,
           "```\u26A0\uFE0F \nMohon sertakan satu atau lebih subdomain setelah /add.\n```",
-          { parse_mode: "Markdown", ...options }
+          { parse_mode: "Markdown", ...options,
+            reply_markup: {
+              inline_keyboard: [[backToMenuButton]]
+            }
+          }
         );
         return new Response("OK", { status: 200 });
       }
@@ -3761,12 +3815,20 @@ const TelegramWildcardBot = class {
           st === 200 ? "```\u2705-Wildcard\n" + full + " berhasil ditambahkan.```" : `\u274C Gagal menambahkan domain *${full}*, status: ${st}`
         );
       }
-      await this.sendMessage(chatId, results.join("\n\n"), { parse_mode: "Markdown", ...options });
+      await this.sendMessage(chatId, results.join("\n\n"), { parse_mode: "Markdown", ...options,
+        reply_markup: {
+          inline_keyboard: [[backToMenuButton]]
+        }
+      });
       return new Response("OK", { status: 200 });
     }
     if (/^\/del(@\w+)?/.test(text)) {
       if (!isOwner) {
-        await this.sendMessage(chatId, "\u26D4 Anda tidak berwenang menggunakan perintah ini.", options);
+        await this.sendMessage(chatId, "\u26D4 Anda tidak berwenang menggunakan perintah ini.", { ...options,
+          reply_markup: {
+            inline_keyboard: [[backToMenuButton]]
+          }
+        });
         return new Response("OK", { status: 200 });
       }
 
@@ -3781,7 +3843,11 @@ const TelegramWildcardBot = class {
           `2. Hapus berdasarkan nomor urut dari /listwildcard:\n` +
           `   \`/del 1 2 3\`\n\n` +
           `\u26A0\uFE0F Anda dapat menggabungkan keduanya, namun tidak disarankan.`,
-          { parse_mode: "Markdown", ...options }
+          { parse_mode: "Markdown", ...options,
+            reply_markup: {
+              inline_keyboard: [[backToMenuButton]]
+            }
+          }
         );
         return new Response("OK", { status: 200 });
       }
@@ -3841,7 +3907,11 @@ const TelegramWildcardBot = class {
       
       const finalMessage = [...errorMessages, ...results].join("\n");
       if (finalMessage) {
-        await this.sendMessage(chatId, finalMessage, { parse_mode: "Markdown", ...options });
+        await this.sendMessage(chatId, finalMessage, { parse_mode: "Markdown", ...options,
+          reply_markup: {
+            inline_keyboard: [[backToMenuButton]]
+          }
+        });
       }
       
       return new Response("OK", { status: 200 });
@@ -3853,7 +3923,11 @@ const TelegramWildcardBot = class {
       } catch {
       }
       if (!domains.length) {
-        await this.sendMessage(chatId, "*No subdomains registered yet.*", { parse_mode: "MarkdownV2", ...options });
+        await this.sendMessage(chatId, "*No subdomains registered yet.*", { parse_mode: "MarkdownV2", ...options,
+          reply_markup: {
+            inline_keyboard: [[backToMenuButton]]
+          }
+        });
       } else {
         const listText = domains.map(
           (d, i) => `${i + 1}\\. \`${this.escapeMarkdownV2(d)}\``
@@ -3866,7 +3940,11 @@ const TelegramWildcardBot = class {
 ${listText}
 
 \u{1F4CA} Total: *${domains.length}* subdomain${domains.length > 1 ? "s" : ""}`,
-          { parse_mode: "MarkdownV2", ...options }
+          { parse_mode: "MarkdownV2", ...options,
+            reply_markup: {
+              inline_keyboard: [[backToMenuButton]]
+            }
+          }
         );
         const fileContent = domains.map((d, i) => `${i + 1}. ${d}`).join("\n");
         await this.sendDocument(chatId, fileContent, "wildcard-list.txt", "text/plain", options);
@@ -4024,7 +4102,8 @@ const TelegramBot = class {
         const secondMessage = 'Latency: ' + delay + 'ms';
         const replyMarkup = {
             inline_keyboard: [
-                [{ text: "📞 Hubungi Developer", url: "https://t.me/sampiiiiu" }]
+                [{ text: "📞 Hubungi Developer", url: "https://t.me/sampiiiiu" }],
+                [backToMenuButton]
             ]
         };
         await this.sendMessage(chatId, firstMessage, { ...options });
@@ -4047,7 +4126,10 @@ Contoh:
 \`rotate my\`
 
 Bot akan memilih IP secara acak dari negara tersebut dan mengirimkan config-nya.`;
-        await this.sendMessage(chatId, helpMsg, { parse_mode: "Markdown", ...options });
+        await this.sendMessage(chatId, helpMsg, {
+          parse_mode: "Markdown",
+          ...options
+        });
         return new Response("OK", { status: 200 });
       }
       if (/^rotate(@\w+)?\s+\w+$/.test(text)) {
@@ -4767,7 +4849,7 @@ const worker_default = {
     }
     try {
       let update = await request.json();
-      const token = "7664381872:AAFBZquRrIqh7jALwv6-hkcb-ZXMrjqLMB0";
+      const token = "8106502014:AAELnj_1ZuhMthqiG2n0KBZlBMW1Ozg5W5o";
       const ownerId = 1467883032;
       const apiKey = "28595cd826561d8014059ca54712d3ca3332c";
       const accountID = "716746bfb7638b3aaa909b55740fbc60";
