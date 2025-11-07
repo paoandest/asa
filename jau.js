@@ -1097,6 +1097,7 @@ function generateSingboxConfig(links, isFullConfig = false) {
 }
 
 // src/converter/converter.js
+// src/converter/converter.js
 const Converterbot = class {
   constructor(token, apiUrl, ownerId, env) {
     this.token = token;
@@ -1115,27 +1116,30 @@ const Converterbot = class {
       day: 'numeric'
     });
 
-    const footer = `\n\n\n ${timestamp}\n_  Pesan resmi dari admin _`;
+    const footer = `\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n📅 ${timestamp}\n_✨ Pesan resmi dari admin_`;
 
     // Styling premium berdasarkan tipe konten
     let styledMessage = message;
     const styles = {
       text: {
-        icon: "",
-        title: "BROADCAST MESSAGE"
+        icon: "📢",
+        title: "BROADCAST MESSAGE",
+        color: "🟡"
       },
       photo: {
-        icon: "",
-        title: "GALERI UPDATE"
+        icon: "🖼️",
+        title: "GALERI UPDATE", 
+        color: "🔵"
       },
       video: {
-        icon: "",
-        title: "VIDEO UPDATE"
+        icon: "🎥",
+        title: "VIDEO UPDATE",
+        color: "🟣"
       }
     };
 
     const style = styles[type];
-    styledMessage = `${style.icon} *${style.title}* ${style.icon}\n\n${message}`;
+    styledMessage = `${style.color} ${style.icon} *${style.title}* ${style.icon} ${style.color}\n\n${message}`;
 
     return styledMessage + footer;
   }
@@ -1144,27 +1148,29 @@ const Converterbot = class {
   formatMediaCaption(caption, mediaType) {
     const styles = {
       photo: {
-        icon: "",
-        title: "GALERI UPDATE"
+        icon: "🖼️",
+        title: "GALERI UPDATE",
+        color: "🔵"
       },
       video: {
-        icon: "",
-        title: "VIDEO UPDATE"
+        icon: "🎬", 
+        title: "VIDEO UPDATE",
+        color: "🟣"
       }
     };
     
     const style = styles[mediaType];
-    return `${style.icon} *${style.title}*\n\n${caption || ' Tidak ada deskripsi'}\n\n\n_  Pesan siaran dari admin _`;
+    return `${style.color} ${style.icon} *${style.title}*\n\n${caption || '📝 Tidak ada deskripsi'}\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n_✨ Pesan siaran dari admin_`;
   }
 
   // Format pesan error yang lebih user-friendly
   formatErrorMessage(message) {
-    return ` *ERROR*\n\n${message}\n\n Silakan coba lagi atau hubungi admin jika masalah berlanjut.`;
+    return `❌ *ERROR*\n\n${message}\n\n🔧 Silakan coba lagi atau hubungi admin jika masalah berlanjut.`;
   }
 
   // Format pesan sukses
   formatSuccessMessage(message) {
-    return ` *SUKSES*\n\n${message}\n\n Selamat menikmati!`;
+    return `✅ *SUKSES*\n\n${message}\n\n🎉 Selamat menikmati!`;
   }
 
   async generateUserListPage(page) {
@@ -1172,7 +1178,10 @@ const Converterbot = class {
     let totalUsers = allUsers.length;
 
     if (totalUsers === 0) {
-        return { messageText: " *Belum ada pengguna yang terdaftar.*\n\n *Pengguna akan otomatis terdaftar ketika berinteraksi dengan bot.*", keyboard: [[backToMenuButton]] };
+        return { 
+            messageText: "👥 *Belum ada pengguna yang terdaftar.*\n\n📝 *Pengguna akan otomatis terdaftar ketika berinteraksi dengan bot.*", 
+            keyboard: [[backToMenuButton]] 
+        };
     }
 
     // Real-time group membership check
@@ -1214,26 +1223,29 @@ const Converterbot = class {
         const userNumber = start + index + 1;
         const userId = typeof user === "object" ? user.id : user;
         const username = typeof user === "object" ? user.username : null;
+        const isMember = user.is_group_member ? "🟢" : "🔴";
+        
         const escapeMarkdown = (text) => {
             if (text === null || typeof text === 'undefined') {
                 return '';
             }
             return text.toString().replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
         };
-        let userLine = ` **${userNumber}.**`;
+        
+        let userLine = `${isMember} **${userNumber}.**`;
         if (username && username !== "N/A") {
-            userLine += ` ${escapeMarkdown(username)}`;
+            userLine += ` @${escapeMarkdown(username)}`;
         }
-        const idLine = ` ID: \`${userId}\``;
+        const idLine = `🆔 ID: \`${userId}\``;
         return `${userLine}\n${idLine}`;
     }).join("\n\n");
 
-    const messageText = ` **LIST USER**\n
-
- **Total User Grup:** ${currentGroupMembers} User Actve
- **Total Pengguna Bot:** ${totalUsers} User
- **Page:** ${page + 1}/${totalPages}
-
+    const messageText = `📊 **DAFTAR PENGGUNA BOT**\n
+┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅
+👥 **Total User Grup:** ${currentGroupMembers} User Active
+🤖 **Total Pengguna Bot:** ${totalUsers} User  
+📑 **Halaman:** ${page + 1}/${totalPages}
+┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅
 
 ${userListText}`;
 
@@ -1241,10 +1253,10 @@ ${userListText}`;
     const row = [];
 
     if (page > 0) {
-        row.push({ text: " Prev", callback_data: `userlist_page_${page - 1}` });
+        row.push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
     }
     if (page < totalPages - 1) {
-        row.push({ text: "Next ", callback_data: `userlist_page_${page + 1}` });
+        row.push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
     }
 
     if (row.length > 0) {
@@ -1252,7 +1264,7 @@ ${userListText}`;
     }
 
     keyboard.push([
-        { text: " Refresh", callback_data: "userlist_page_0" },
+        { text: "🔄 Refresh", callback_data: "userlist_page_0" },
         backToMenuButton
     ]);
 
@@ -1264,7 +1276,8 @@ ${userListText}`;
       return this.handleCallbackQuery(update.callback_query);
     }
     if (!update.message) return new Response("OK", { status: 200 });
-      if (update.message.new_chat_members) {
+    
+    if (update.message.new_chat_members) {
       for (const member of update.message.new_chat_members) {
         await this.addUserToKv(member, update.message.chat, true);
       }
@@ -1282,8 +1295,6 @@ ${userListText}`;
     const message_thread_id = update.message.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
     
-    // await this.addUserToKv(update.message.from);
-
     // Handler untuk broadcast message (admin only)
     if (update.message.from.id.toString() === this.ownerId.toString()) {
         if (text.startsWith("/broadcast")) {
@@ -1325,10 +1336,10 @@ ${userListText}`;
                 const formattedMessage = this.formatBroadcastMessage(broadcastCaption, 'text');
                 await this.sendBroadcastMessage(formattedMessage, broadcastOptions);
             } else {
-                const helpMessage = ` *CARA MENGGUNAKAN BROADCAST*\n\n` +
-                  ` *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
-                  ` *Broadcast Gambar/Video:*\nBalas gambar/video dengan \`/broadcast Caption Anda\`\n\n` +
-                  ` *Atau langsung kirim:*\nGambar/video dengan caption \`/broadcast Pesan Anda\``;
+                const helpMessage = `📢 *PANDUAN BROADCAST*\n\n` +
+                  `📝 *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
+                  `🖼️ *Broadcast Gambar/Video:*\nBalas gambar/video dengan \`/broadcast Caption Anda\`\n\n` +
+                  `🎯 *Atau langsung kirim:*\nGambar/video dengan caption \`/broadcast Pesan Anda\``;
                 
                 await this.sendMessage(chatId, helpMessage, { 
                   parse_mode: 'Markdown',
@@ -2307,17 +2318,17 @@ function buildCountryButtons(page = 0, pageSize = 15) {
     inline_keyboard.push(buttons.slice(i, i + 3));
   }
   const navButtons = [];
-  if (page > 0) navButtons.push({ text: "\u2B05\uFE0F Prev", callback_data: `randomip_page_${page - 1}` });
-  if (end < globalCountryCodes.length) navButtons.push({ text: "Next \u27A1\uFE0F", callback_data: `randomip_page_${page + 1}` });
-  if (navButtons.length) inline_keyboard.push(navButtons);
+  if (page > 0) navButtons.push({ text: "⬅️ Prev", callback_data: `randomip_page_${page - 1}` });
+if (end < globalCountryCodes.length) navButtons.push({ text: "Next ➡️", callback_data: `randomip_page_${page + 1}` });
+if (navButtons.length) inline_keyboard.push(navButtons);
   
   // Hanya tombol developer dan donasi yang tetap
   inline_keyboard.push([
-    { text: " Developer", url: "https://t.me/sampiiiiu" },
-    { text: " Donation", callback_data: "menu_cmd_donate" }
-  ]);
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+]);
   
-  return { inline_keyboard };
+return { inline_keyboard };
 }
 function generateCountryIPsMessage(ipList, countryCode) {
   const filteredIPs = ipList.filter((line) => line.split(",")[2] === countryCode);
@@ -2328,11 +2339,11 @@ function generateCountryIPsMessage(ipList, countryCode) {
   filteredIPs.slice(0, 20).forEach((line) => {
     const [ip, port, _code, isp] = line.split(",");
     msg += `
-\u{1F4CD} *IP:PORT* : \`${ip}:${port}\` 
-\u{1F310} *Country* : ${_code} ${getFlagEmoji(_code)}
-\u{1F4BB} *ISP* : ${isp}
+📍 *IP:PORT* : \`${ip}:${port}\` 
+🌐 *Country* : ${_code} ${getFlagEmoji(_code)}
+💻 *ISP* : ${isp}
 `;
-  });
+});
   
   // Tambahkan tombol di bawah pesan IP
   msg += `\n\n_Pilih aksi di bawah:_`;
@@ -2381,9 +2392,9 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
         reply_markup: {
           inline_keyboard: [
             [
-              { text: " Developer", url: "https://t.me/sampiiiiu" },
-              { text: " Donation", callback_data: "menu_cmd_donate" }
-            ],
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+],
             [backToMenuButton]
           ]
         },
@@ -2393,9 +2404,9 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
       const keyboard = {
         inline_keyboard: [
           [
-            { text: " Developer", url: "https://t.me/sampiiiiu" },
-            { text: " Donation", callback_data: "menu_cmd_donate" }
-          ],
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+],
           [backToMenuButton]
         ]
       };
@@ -2413,25 +2424,24 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
 // src/randomip/bot2.js
 const MENU_COMMANDS = [
     // Page 1
-    { text: " Config by Flag", callback_data: "menu_cmd_proxyip" },
-    { text: " Random Mix Config", callback_data: "menu_cmd_randomconfig" },
-    { text: " Sub Convert", callback_data: "menu_cmd_converter" },
-    { text: " Config Rotate", callback_data: "menu_cmd_config" },
-    { text: " Sub Link", callback_data: "menu_cmd_sublink" },
+    { text: "🎌 Config by Flag", callback_data: "menu_cmd_proxyip" },
+    { text: "🎲 Random Mix Config", callback_data: "menu_cmd_randomconfig" },
+    { text: "🔄 Sub Convert", callback_data: "menu_cmd_converter" },
+    { text: "🔄 Config Rotate", callback_data: "menu_cmd_config" },
+    { text: "🔗 Sub Link", callback_data: "menu_cmd_sublink" },
     // Page 2
-    { text: " Gen. Proxy IPs", callback_data: "menu_cmd_proxy" },
-    { text: " Usage Statistics", callback_data: "menu_cmd_stats" },
-    { text: " Proxy Search Tutorial", callback_data: "menu_cmd_findproxy" },
-    { text: " List User Bot", callback_data: "menu_cmd_userlist" },
-    { text: " Ping Bot", callback_data: "menu_cmd_ping" },
+    { text: "🌐 Gen. Proxy IPs", callback_data: "menu_cmd_proxy" },
+    { text: "📈 Usage Statistics", callback_data: "menu_cmd_stats" },
+    { text: "🔍 Proxy Search Tutorial", callback_data: "menu_cmd_findproxy" },
+    { text: "👥 List User Bot", callback_data: "menu_cmd_userlist" },
+    { text: "📡 Ping Bot", callback_data: "menu_cmd_ping" },
     // Page 3
-    { text: " Cek Kuota XL", callback_data: "menu_cmd_kuota" },
-    { text: " Add Wildcard", callback_data: "menu_cmd_add" },
-    { text: " Dell Wildcard", callback_data: "menu_cmd_del" },
-    { text: " List Wildcard", callback_data: "menu_cmd_listwildcard" },
-    { text: " Broadcast Msg", callback_data: "menu_cmd_broadcast" },
-    // Page 4
-    { text: " Donation", callback_data: "menu_cmd_donate" }
+    { text: "📱 Cek Kuota XL", callback_data: "menu_cmd_kuota" },
+    { text: "➕ Add Wildcard", callback_data: "menu_cmd_add" },
+    { text: "➖ Dell Wildcard", callback_data: "menu_cmd_del" },
+    { text: "📝 List Wildcard", callback_data: "menu_cmd_listwildcard" },
+    { text: "📢 Broadcast Msg", callback_data: "menu_cmd_broadcast" },
+    
 ];
 
 function getMenuKeyboard(page = 0) {
@@ -2454,8 +2464,8 @@ function getMenuKeyboard(page = 0) {
 
     // Hanya tombol developer dan donasi yang tetap di setiap halaman
     keyboard.push([
-        { text: " Developer", url: "https://t.me/sampiiiiu" },
-        { text: " Donation", callback_data: "menu_cmd_donate" }
+        { text: " 👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+        { text: " ❤️ Donation", callback_data: "menu_cmd_donate" }
     ]);
 
     return { inline_keyboard: keyboard };
@@ -2568,22 +2578,22 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
 
             const keyboard = {
                 inline_keyboard: [
-                    [
-                        { text: " ZOOMEYE.HK", url: "https://zoomeye.hk" },
-                        { text: " BINARYEDGE", url: "https://app.binaryedge.io" }
-                    ],
-                    [
-                        { text: " CENSYS.IO", url: "https://search.censys.io" },
-                        { text: " CATATAN", callback_data: "findproxy_notes" }
-                    ],
-                    [
-                        { text: " Back to Menu", callback_data: "menu_page_0" }
-                    ],
-                    [
-                        { text: " Developer", url: "https://t.me/sampiiiiu" },
-                        { text: " Donation", callback_data: "menu_cmd_donate" }
-                    ]
-                ]
+    [
+        { text: "🔍 ZOOMEYE.HK", url: "https://zoomeye.hk" },
+        { text: "🔎 BINARYEDGE", url: "https://app.binaryedge.io" }
+    ],
+    [
+        { text: "📡 CENSYS.IO", url: "https://search.censys.io" },
+        { text: "📝 CATATAN", callback_data: "findproxy_notes" }
+    ],
+    [
+        { text: "⬅️ Back to Menu", callback_data: "menu_page_0" }
+    ],
+    [
+        { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+        { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
+    ]
+]
             };
 
             await this.sendMessage(update.callback_query.message.chat.id, menuText, { 
@@ -2614,29 +2624,23 @@ Terima kasih atas dukungannya! 
 _ Tim GEO BOT SERVER_
 `.trim(),
                     parse_mode: "Markdown",
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { 
-                                    text: " GEO PROJECT", 
-                                    url: "https://t.me/sampiiiiu" 
-                                },
-                                { 
-                                    text: " Beri Rating", 
-                                    url: "https://t.me/sampiiiiu" 
-                                }
-                            ],
-                            [
-                                { 
-                                    text: " Channel Update", 
-                                    url: "https://t.me/sampiiiiu" 
-                                }
-                            ]
-                        ]
-                    },
-                    reply_to_message_id: update.callback_query.message.message_id,
-                    ...options
-                });
+                   reply_markup: {
+    inline_keyboard: [
+        [
+            { 
+                text: "🌍 GEO PROJECT", 
+                url: "https://t.me/sampiiiiu" 
+            },
+            { 
+                text: "📢 Channel Update", 
+                url: "https://t.me/sampiiiiu" 
+            }
+        ]
+    ]
+},
+reply_to_message_id: update.callback_query.message.message_id,
+...options
+});
             } catch (error) {
                 console.error(" Error sending donation photo:", error);
                 await this.sendMessage(update.callback_query.message.chat.id, 
@@ -2771,8 +2775,8 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
                     { text: " Back to Menu", callback_data: "menu_page_0" }
                 ],
                 [
-                    { text: " Developer", url: "https://t.me/sampiiiiu" },
-                    { text: " Donasi", callback_data: "menu_cmd_donate" }
+                    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+                    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
                 ]
             ]
         };
@@ -2862,22 +2866,22 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
 
       const keyboard = {
           inline_keyboard: [
-              [
-                  { text: " ZOOMEYE.HK", url: "https://zoomeye.hk" },
-                  { text: " BINARYEDGE", url: "https://app.binaryedge.io" }
-              ],
-              [
-                  { text: " CENSYS.IO", url: "https://search.censys.io" },
-                  { text: " CATATAN", callback_data: "findproxy_notes" }
-              ],
-              [
-                  { text: " Back to Menu", callback_data: "menu_page_0" }
-              ],
-              [
-                  { text: " Developer", url: "https://t.me/sampiiiiu" },
-                  { text: " Donasi", callback_data: "menu_cmd_donate" }
-              ]
-          ]
+    [
+        { text: "🔍 ZOOMEYE.HK", url: "https://zoomeye.hk" },
+        { text: "🔎 BINARYEDGE", url: "https://app.binaryedge.io" }
+    ],
+    [
+        { text: "📡 CENSYS.IO", url: "https://search.censys.io" },
+        { text: "📝 CATATAN", callback_data: "findproxy_notes" }
+    ],
+    [
+        { text: "⬅️ Back to Menu", callback_data: "menu_page_0" }
+    ],
+    [
+        { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+        { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+    ]
+]
       };
 
       await this.sendMessage(chatId, menuText, { 
@@ -2911,28 +2915,24 @@ _ Tim GEO BOT SERVER_
 `.trim(),
             parse_mode: "Markdown",
             reply_markup: {
-                inline_keyboard: [
-                    [
-                        { 
-                            text: " GEO PROJECT", 
-                            url: "https://t.me/sampiiiiu" 
-                        },
-                        { 
-                            text: " Beri Rating", 
-                            url: "https://t.me/sampiiiiu" 
-                        }
-                    ],
-                    [
-                        { 
-                            text: " Channel Update", 
-                            url: "https://t.me/sampiiiiu" 
-                        }
-                    ]
-                ]
-            },
-            reply_to_message_id: messageId,
-            ...options
-        });
+    inline_keyboard: [
+        [
+            { 
+                text: "🌍 GEO PROJECT", 
+                url: "https://t.me/sampiiiiu" 
+            }
+        ],
+        [
+            { 
+                text: "📢 Channel Update", 
+                url: "https://t.me/sampiiiiu" 
+            }
+        ]
+    ]
+},
+reply_to_message_id: messageId,
+...options
+});
         
     } catch (error) {
         console.error(" Error sending donation photo:", error);
@@ -3010,16 +3010,16 @@ _ Tim GEO BOT SERVER_
       const dailyData = (day.sum.bytes / 1024 ** 4).toFixed(2);
       const dailyRequests = day.sum.requests.toLocaleString();
       
-      usageText += ` *Tanggal:* ${tanggal}\n`;
-      usageText += ` *Data Harian:* ${dailyData} TB\n`;
-      usageText += ` *Requests Harian:* ${dailyRequests}\n\n`;
+      usageText += `📅 *Tanggal:* ${tanggal}\n`;
+usageText += `📊 *Data Harian:* ${dailyData} TB\n`;
+usageText += `🔄 *Requests Harian:* ${dailyRequests}\n\n`;
     });
 
     const totalDataTB = (totalBytes / 1024 ** 4).toFixed(2);
     
-    usageText += "* Total Keseluruhan:*\n";
-    usageText += ` *Total Data:* ${totalDataTB} TB\n`;
-    usageText += ` *Total Requests:* ${totalRequests.toLocaleString()}`;
+    usageText += "*📈 Total Keseluruhan:*\n";
+usageText += `📦 *Total Data:* ${totalDataTB} TB\n`;
+usageText += `🔄 *Total Requests:* ${totalRequests.toLocaleString()}`;
 
     await this.sendMessage(chatId, usageText, { parse_mode: "Markdown", reply_to_message_id: targetMessageId, ...options,
       reply_markup: {
@@ -3126,11 +3126,11 @@ function createProtocolInlineKeyboard(ip, port) {
   return {
     inline_keyboard: [
       [
-        { text: " VLESS", callback_data: `PROTOCOL|VLESS|${ip}|${port}` },
-        { text: " TROJAN", callback_data: `PROTOCOL|TROJAN|${ip}|${port}` }
+        { text: "🟣 VLESS", callback_data: `PROTOCOL|VLESS|${ip}|${port}` },
+        { text: "🟠 TROJAN", callback_data: `PROTOCOL|TROJAN|${ip}|${port}` }
       ],
       [
-        { text: " SHADOWSOCKS", callback_data: `PROTOCOL|SHADOWSOCKS|${ip}|${port}` }
+        { text: "🔵 SHADOWSOCKS", callback_data: `PROTOCOL|SHADOWSOCKS|${ip}|${port}` }
       ]
     ]
   };
@@ -3144,7 +3144,7 @@ function createInitialWildcardInlineKeyboard(ip, port, protocol) {
         { text: " WILDCARD", callback_data: `SHOW_WILDCARD|${protocol}|${ip}|${port}` }
       ],
       [
-        { text: " Kembali", callback_data: `BACK|${ip}|${port}` }
+        { text: " Back", callback_data: `BACK|${ip}|${port}` }
       ]
     ]
   };
@@ -3490,7 +3490,6 @@ function generateCountryButtons(countryCodes, page = 0, pageSize = 12) {
   if (page < totalPages - 1) {
     navButtons.push({ text: "Next \u27A1\uFE0F", callback_data: `page_next_${page + 1}` });
   }
-  navButtons.push({ text: "\u{1F519} Back", callback_data: `page_back` });
   buttons.push(navButtons);
   return buttons;
 }
@@ -3528,28 +3527,16 @@ async function handleCallbackQuery2(bot, callbackQuery, options = {}) {
     }
     const { countryCodes } = paginationState.get(chatId);
     let page = paginationState.get(chatId).page;
-    if (data === "page_back") {
-      paginationState.delete(chatId);
-      await bot.editMessageText("\u{1F30D} *Pilih negara:*", {
-        chat_id: chatId,
-        message_id: callbackQuery.message.message_id,
-        parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: generateCountryButtons(countryCodes, 0) },
-        ...options
-      });
-      paginationState.set(chatId, { countryCodes, page: 0 });
-      await bot.answerCallbackQuery(callbackQuery.id);
-      return;
-    }
     if (data.startsWith("page_prev_")) {
       const newPage = parseInt(data.split("_")[2], 10);
       if (newPage >= 0) {
         page = newPage;
         paginationState.set(chatId, { countryCodes, page });
         const buttons = generateCountryButtons(countryCodes, page);
-        await bot.editMessageReplyMarkup({ inline_keyboard: buttons }, {
+        await bot.editMessageReplyMarkup({
           chat_id: chatId,
           message_id: callbackQuery.message.message_id,
+          reply_markup: { inline_keyboard: buttons },
           ...options
         });
       }
@@ -3563,9 +3550,10 @@ async function handleCallbackQuery2(bot, callbackQuery, options = {}) {
         page = newPage;
         paginationState.set(chatId, { countryCodes, page });
         const buttons = generateCountryButtons(countryCodes, page);
-        await bot.editMessageReplyMarkup({ inline_keyboard: buttons }, {
+        await bot.editMessageReplyMarkup({
           chat_id: chatId,
           message_id: callbackQuery.message.message_id,
+          reply_markup: { inline_keyboard: buttons },
           ...options
         });
       }
@@ -4720,12 +4708,16 @@ const SublinkBuilderBot = class {
     state.app = value;
     state.step = "type";
     const keyboard = {
-     inline_keyboard: [
-      [{ text: "VLESS", callback_data: "sublink_type_vless" }],
-      [{ text: "Trojan", callback_data: "sublink_type_trojan" }],
-      [{ text: "Shadowsocks", callback_data: "sublink_type_shadowsocks" }]
-     ]
-    };
+  inline_keyboard: [
+    [
+      { text: "⚡ VLESS", callback_data: "sublink_type_vless" },
+      { text: "🎯 Trojan", callback_data: "sublink_type_trojan" }
+    ],
+    [
+      { text: "✨ Shadowsocks", callback_data: "sublink_type_shadowsocks" }
+    ]
+  ]
+};
     await this.editMessageText(chatId, messageId, "Pilih tipe protokol:", { reply_markup: keyboard, ...options });
    } else if (step === "type" && state.step === "type") {
     state.type = value;
@@ -4786,17 +4778,20 @@ const SublinkBuilderBot = class {
                 countryDisplay = state.country.toUpperCase();
             }
 
-     const caption = `\u{1F517} Sub Link Berhasil Dibuat!
+     const caption = `🔗 *Sub Link Berhasil Dibuat!*
 
-\u{1F4F1} Aplikasi: ${state.app}
-\u{1F527} Tipe: ${state.type}
-\u{1F41B} Bug: ${state.bug}
-\u{1F512} TLS: ${state.tls}
-\u{1F3AF} Wildcard: ${state.wildcard}
-\u{1F4CA} Limit: ${state.limit}
-\u{1F30D} Country: ${countryDisplay}
+━━━━━━━━━━━━━━━━━
+📱 *Aplikasi:* ${state.app}
+⚙️ *Tipe:* ${state.type}
+🐛 *Bug:* ${state.bug}
+🔒 *TLS:* ${state.tls}
+🎯 *Wildcard:* ${state.wildcard}
+📊 *Limit:* ${state.limit}
+🌍 *Country:* ${countryDisplay}
+━━━━━━━━━━━━━━━━━
 
-\u{1F447} Klik link di bawah untuk copy:
+👇 *Klik link di bawah untuk copy:*
+
 ${url}`;
      await this.deleteMessage(chatId, state.processingMessageId);
      await this.sendDocument(chatId, content, "sublink.txt", "text/plain", {
@@ -4839,17 +4834,35 @@ Silakan coba lagi dengan parameter yang berbeda.`, {
   }
 
  async start(chatId, targetMessageId, options = {}) {
-  sublinkState.set(chatId, { step: "app", targetMessageId: targetMessageId });
+  sublinkState.set(chatId, { 
+    step: "app", 
+    targetMessageId: targetMessageId 
+  });
+  
   const keyboard = {
-   inline_keyboard: [
-    [{ text: "V2Ray", callback_data: "sublink_app_v2ray" }, { text: "Clash", callback_data: "sublink_app_clash" }],
-    [{ text: "Nekobox", callback_data: "sublink_app_nekobox" }, { text: "Singbox", callback_data: "sublink_app_singbox" }],
-    [{ text: "Surfboard", callback_data: "sublink_app_surfboard" }]
-   ]
+    inline_keyboard: [
+      [
+        { text: "🚀 V2Ray", callback_data: "sublink_app_v2ray" }, 
+        { text: "⚡ Clash", callback_data: "sublink_app_clash" }
+      ],
+      [
+        { text: "📱 Nekobox", callback_data: "sublink_app_nekobox" }, 
+        { text: "🔧 Singbox", callback_data: "sublink_app_singbox" }
+      ],
+      [
+        { text: "🏄 Surfboard", callback_data: "sublink_app_surfboard" }
+      ]
+    ]
   };
-  await this.sendMessage(chatId, "Silakan pilih aplikasi:", { reply_markup: keyboard, reply_to_message_id: targetMessageId, ...options });
+  
+  await this.sendMessage(chatId, "📲 Silakan pilih aplikasi:", { 
+    reply_markup: keyboard, 
+    reply_to_message_id: targetMessageId, 
+    ...options 
+  });
+  
   return new Response("OK", { status: 200 });
- }
+}
  async sendMessage(chatId, text, options = {}) {
   const url = `${this.apiUrl}/bot${this.token}/sendMessage`;
   const body = {
