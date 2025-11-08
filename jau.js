@@ -127,7 +127,7 @@ function parseShadowsocksLink(link) {
 }
 
 // src/converter/configGenerators.js
-const backToMenuButton = { text: " Back to Menu", callback_data: "menu_page_0" };
+const backToMenuButton = { text: "⬅️ Back to Menu", callback_data: "menu_page_0" };
 
 function generateClashConfig(links, isFullConfig = false) {
   const parsedLinks = links.map((link) => parseV2RayLink(link));
@@ -1109,14 +1109,14 @@ const Converterbot = class {
 
   // Format pesan broadcast yang lebih menarik dengan styling premium
   formatBroadcastMessage(message, type = 'text') {
-    const timestamp = new Date().toLocaleDateString('id-ID', {
+    const timestamp = new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
 
-    const footer = `\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n📅 ${timestamp}\n_✨ Pesan resmi dari admin_`;
+    const footer = `\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n📅 ${timestamp}\n_✨ Official message from admin_`;
 
     // Styling premium berdasarkan tipe konten
     let styledMessage = message;
@@ -1128,7 +1128,7 @@ const Converterbot = class {
       },
       photo: {
         icon: "🖼️",
-        title: "GALERI UPDATE", 
+        title: "GALLERY UPDATE",
         color: "🔵"
       },
       video: {
@@ -1149,7 +1149,7 @@ const Converterbot = class {
     const styles = {
       photo: {
         icon: "🖼️",
-        title: "GALERI UPDATE",
+        title: "GALLERY UPDATE",
         color: "🔵"
       },
       video: {
@@ -1160,17 +1160,17 @@ const Converterbot = class {
     };
     
     const style = styles[mediaType];
-    return `${style.color} ${style.icon} *${style.title}*\n\n${caption || '📝 Tidak ada deskripsi'}\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n_✨ Pesan siaran dari admin_`;
+    return `${style.color} ${style.icon} *${style.title}*\n\n${caption || '📝 No description'}\n\n┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n_✨ Broadcast message from admin_`;
   }
 
   // Format pesan error yang lebih user-friendly
   formatErrorMessage(message) {
-    return `❌ *ERROR*\n\n${message}\n\n🔧 Silakan coba lagi atau hubungi admin jika masalah berlanjut.`;
+    return `❌ *ERROR*\n\n${message}\n\n🔧 Please try again or contact the admin if the problem persists.`;
   }
 
   // Format pesan sukses
   formatSuccessMessage(message) {
-    return `✅ *SUKSES*\n\n${message}\n\n🎉 Selamat menikmati!`;
+    return `✅ *SUCCESS*\n\n${message}\n\n🎉 Enjoy!`;
   }
 
   async generateUserListPage(page) {
@@ -1179,7 +1179,7 @@ const Converterbot = class {
 
     if (totalUsers === 0) {
         return { 
-            messageText: "👥 *Belum ada pengguna yang terdaftar.*\n\n📝 *Pengguna akan otomatis terdaftar ketika berinteraksi dengan bot.*", 
+            messageText: "👥 *No registered users yet.*\n\n📝 *Users will be automatically registered when they interact with the bot.*", 
             keyboard: [[backToMenuButton]] 
         };
     }
@@ -1240,11 +1240,11 @@ const Converterbot = class {
         return `${userLine}\n${idLine}`;
     }).join("\n\n");
 
-    const messageText = `📊 **DAFTAR PENGGUNA BOT**\n
+    const messageText = `📊 **BOT USER LIST**\n
 ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅
-👥 **Total User Grup:** ${currentGroupMembers} User Active
-🤖 **Total Pengguna Bot:** ${totalUsers} User  
-📑 **Halaman:** ${page + 1}/${totalPages}
+👥 **Total Group Users:** ${currentGroupMembers} Active Users
+🤖 **Total Bot Users:** ${totalUsers} Users
+📑 **Page:** ${page + 1}/${totalPages}
 ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅
 
 ${userListText}`;
@@ -1253,7 +1253,7 @@ ${userListText}`;
     const row = [];
 
     if (page > 0) {
-        row.push({ text: "⬅️ Prev", callback_data: `userlist_page_${page - 1}` });
+        row.push({ text: "⬅️ Previous", callback_data: `userlist_page_${page - 1}` });
     }
     if (page < totalPages - 1) {
         row.push({ text: "Next ➡️", callback_data: `userlist_page_${page + 1}` });
@@ -1264,7 +1264,7 @@ ${userListText}`;
     }
 
     keyboard.push([
-        { text: "🔄 Refresh", callback_data: "userlist_page_0" },
+        { text: "🔄 Reload", callback_data: "userlist_page_0" },
         backToMenuButton
     ]);
 
@@ -1297,64 +1297,58 @@ ${userListText}`;
     
     // Handler untuk broadcast message (admin only)
     if (update.message.from.id.toString() === this.ownerId.toString()) {
-        if (text.startsWith("/broadcast")) {
-            const lockKey = `broadcast_lock_${messageId}`;
-            const isLocked = await this.kv.get(lockKey);
+      // Cek apakah admin sedang dalam proses broadcast
+      if (broadcastState.has(chatId)) {
+        const lockKey = `broadcast_lock_${messageId}`;
+        const isLocked = await this.kv.get(lockKey);
 
-            if (isLocked) {
-                // Pesan sudah diproses oleh instance lain, abaikan
-                return new Response("OK", { status: 200 });
-            }
-
-            // Atur kunci dengan TTL 60 detik untuk mencegah duplikasi
-            await this.kv.put(lockKey, "locked", { expirationTtl: 60 });
-            
-            // Hardcode target topic ID
-            const broadcastOptions = { ...options, message_thread_id: 1876 };
-
-            const broadcastCaption = text.substring("/broadcast".length).trim();
-          
-            if (reply) {
-                if (reply.photo) {
-                    const file_id = reply.photo[reply.photo.length - 1].file_id;
-                    const formattedCaption = this.formatMediaCaption(broadcastCaption, 'photo');
-                    await this.sendBroadcastPhoto(file_id, formattedCaption, broadcastOptions);
-                } else if (reply.video) {
-                    const file_id = reply.video.file_id;
-                    const formattedCaption = this.formatMediaCaption(broadcastCaption, 'video');
-                    await this.sendBroadcastVideo(file_id, formattedCaption, broadcastOptions);
-                }
-            } else if (update.message.photo) {
-                const file_id = update.message.photo[update.message.photo.length - 1].file_id;
-                const formattedCaption = this.formatMediaCaption(caption.substring("/broadcast".length).trim(), 'photo');
-                await this.sendBroadcastPhoto(file_id, formattedCaption, broadcastOptions);
-            } else if (update.message.video) {
-                const file_id = update.message.video.file_id;
-                const formattedCaption = this.formatMediaCaption(caption.substring("/broadcast".length).trim(), 'video');
-                await this.sendBroadcastVideo(file_id, formattedCaption, broadcastOptions);
-            } else if (broadcastCaption) {
-                const formattedMessage = this.formatBroadcastMessage(broadcastCaption, 'text');
-                await this.sendBroadcastMessage(formattedMessage, broadcastOptions);
-            } else {
-                const helpMessage = `📢 *PANDUAN BROADCAST*\n\n` +
-                  `📝 *Broadcast Teks:*\n\`/broadcast Pesan teks Anda\`\n\n` +
-                  `🖼️ *Broadcast Gambar/Video:*\nBalas gambar/video dengan \`/broadcast Caption Anda\`\n\n` +
-                  `🎯 *Atau langsung kirim:*\nGambar/video dengan caption \`/broadcast Pesan Anda\``;
-                
-                await this.sendMessage(chatId, helpMessage, { 
-                  parse_mode: 'Markdown',
-                  reply_to_message_id: messageId,
-                  ...options 
-                });
-            }
-            return new Response("OK", { status: 200 });
+        if (isLocked) {
+          return new Response("OK", { status: 200 });
         }
+        await this.kv.put(lockKey, "locked", { expirationTtl: 60 });
+
+        broadcastState.delete(chatId); // Hapus state setelah pesan diterima
+
+        // Hardcode target topic ID
+        const broadcastOptions = { ...options, message_thread_id: 1876 };
+
+        if (update.message.photo) {
+          const file_id = update.message.photo[update.message.photo.length - 1].file_id;
+          const formattedCaption = this.formatMediaCaption(caption, 'photo');
+          await this.sendBroadcastPhoto(file_id, formattedCaption, broadcastOptions);
+        } else if (update.message.video) {
+          const file_id = update.message.video.file_id;
+          const formattedCaption = this.formatMediaCaption(caption, 'video');
+          await this.sendBroadcastVideo(file_id, formattedCaption, broadcastOptions);
+        } else if (text) {
+          const formattedMessage = this.formatBroadcastMessage(text, 'text');
+          await this.sendBroadcastMessage(formattedMessage, broadcastOptions);
+        } else {
+          await this.sendMessage(chatId, "Message format not supported for broadcast.", { reply_to_message_id: messageId, ...options });
+        }
+        return new Response("OK", { status: 200 });
+      }
+
+      if (text.startsWith("/broadcast")) {
+        broadcastState.set(chatId, { step: 'awaiting_message' });
+        await this.sendMessage(chatId, 
+          " Please send the message you want to broadcast (text, image, or video).", 
+          {
+            reply_markup: {
+              inline_keyboard: [[{ text: " Cancel", callback_data: "cancel_broadcast" }]]
+            },
+            reply_to_message_id: messageId, 
+            ...options 
+          }
+        );
+        return new Response("OK", { status: 200 });
+      }
     }
 
     // Handle userlist command
     if (text.startsWith("/userlist")) {
         const targetMessageId = menuMessageIds.get(chatId) || messageId;
-        const loadingMessage = await this.sendMessage(chatId, " *Memuat daftar pengguna...*", { parse_mode: "Markdown", reply_to_message_id: targetMessageId, ...options });
+        const loadingMessage = await this.sendMessage(chatId, "  *Loading user list...*", { parse_mode: "Markdown", reply_to_message_id: targetMessageId, ...options });
         let messageIdToDelete;
 
         if (loadingMessage && loadingMessage.result) {
@@ -1581,12 +1575,12 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
               reply_markup: {
                 inline_keyboard: [
                   [
-                    { text: " GEO PROJECT", url: "https://t.me/sampiiiiu" },
-                    { text: " JOIN GROUP", url: "https://t.me/auto_sc" }
+                    { text: "👤 GEO PROJECT", url: "https://t.me/sampiiiiu" },
+                    { text: "👥 JOIN GROUP", url: "https://t.me/auto_sc" }
                   ],
                   [
-                    { text: " WEB VPN", url: "https://joss.krukkruk.web.id" },
-                    { text: " CHANNEL", url: "https://t.me/testikuy_mang" }
+                    { text: "🌐 WEB VPN", url: "https://joss.krukkruk.web.id" },
+                    { text: "📢 CHANNEL", url: "https://t.me/testikuy_mang" }
                   ]
                 ]
               },
@@ -1607,8 +1601,8 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
             parse_mode: "Markdown",
             reply_markup: {
               inline_keyboard: [
-                [{ text: " Gabung Grup Sekarang", url: "https://t.me/auto_sc" }],
-                [{ text: " Coba Lagi", callback_data: "retry_join" }]
+                [{ text: "✅ Gabung Grup Sekarang", url: "https://t.me/auto_sc" }],
+                [{ text: "🔄 Coba Lagi", callback_data: "retry_join" }]
               ]
             },
             reply_to_message_id: messageId,
@@ -1803,7 +1797,7 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
 
     // Kirim pesan broadcast dimulai
     await this.sendMessage(this.ownerId, 
-      ` *Memulai Broadcast...*\n\n Total penerima: ${users.length} pengguna\n Estimasi waktu: ${Math.ceil(users.length * 0.1)} detik`,
+      `  *Starting Broadcast...*\n\n  Total recipients: ${users.length} users\n  Estimated time: ${Math.ceil(users.length * 0.1)} seconds`,
       { parse_mode: "Markdown" }
     );
 
@@ -1822,22 +1816,22 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
         }
     }
 
-    let groupSendStatus = " Gagal";
+    let groupSendStatus = "  Failed";
     try {
         const response = await this.sendMessage(this.groupId, message, options);
         if (response && response.ok) {
-            groupSendStatus = " Sukses";
+            groupSendStatus = "  Success";
         }
     } catch (error) {
         console.error(`Failed to send message to group ${this.groupId}:`, error);
     }
 
-    const summary = ` *Laporan Broadcast Selesai*\n\n` +
-      ` *Statistik Pengguna:*\n` +
-      ` Berhasil: ${successfulSends}\n` +
-      ` Gagal: ${failedSends}\n` +
+    const summary = `  *Broadcast Report Completed*\n\n` +
+      `  *User Statistics:*\n` +
+      `  Succeed: ${successfulSends}\n` +
+      `  Fail: ${failedSends}\n` +
       ` Success Rate: ${((successfulSends / users.length) * 100).toFixed(1)}%\n\n` +
-      ` *Statistik Grup:*\n` +
+      `  *Group Statistics:*\n` +
       `Status: ${groupSendStatus}`;
     
     await this.sendMessage(this.ownerId, summary, { parse_mode: "Markdown" });
@@ -1849,7 +1843,7 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     let failedSends = 0;
 
     await this.sendMessage(this.ownerId,
-      ` *Memulai Broadcast Foto...*\n\n Total penerima: ${users.length} pengguna`,
+      `   *Starting Photo Broadcast...*\n\n  Total recipients: ${users.length} users`,
       { parse_mode: "Markdown" }
     );
 
@@ -1868,11 +1862,11 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
         }
     }
 
-    let groupSendStatus = " Gagal";
+    let groupSendStatus = "  Failed";
     try {
         const response = await this.sendPhoto(this.groupId, file_id, { caption, parse_mode: "Markdown", ...options });
         if (response && response.ok) {
-            groupSendStatus = " Sukses";
+            groupSendStatus = "  Success";
         }
     } catch (error) {
         console.error(`Failed to send photo to group ${this.groupId}:`, error);
@@ -1894,7 +1888,7 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     let failedSends = 0;
 
     await this.sendMessage(this.ownerId,
-      ` *Memulai Broadcast Video...*\n\n Total penerima: ${users.length} pengguna`,
+      `  *Starting Video Broadcast...*\n\n  Total recipients: ${users.length} users`,
       { parse_mode: "Markdown" }
     );
 
@@ -1913,11 +1907,11 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
         }
     }
     
-    let groupSendStatus = " Gagal";
+    let groupSendStatus = "  Failed";
     try {
         const response = await this.sendVideo(this.groupId, file_id, { caption, parse_mode: "Markdown", ...options });
         if (response && response.ok) {
-            groupSendStatus = " Sukses";
+            groupSendStatus = "  Success";
         }
     } catch (error) {
         console.error(`Failed to send video to group ${this.groupId}:`, error);
@@ -1939,6 +1933,15 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
     const messageId = callbackQuery.message.message_id;
     const message_thread_id = callbackQuery.message.message_thread_id;
     const options = message_thread_id ? { message_thread_id } : {};
+
+    if (data === "cancel_broadcast") {
+      if (broadcastState.has(chatId)) {
+        broadcastState.delete(chatId);
+        await this.editMessageText(chatId, messageId, "  *Broadcast canceled.*", { ...options });
+      }
+      await this.answerCallbackQuery(callbackQuery.id);
+      return new Response("OK", { status: 200 });
+    }
 
     if (data.startsWith("userlist_page_")) {
         const page = parseInt(data.split("_")[2], 10);
@@ -2012,33 +2015,33 @@ async function randomconfig() {
     const GITHUB_BASE_URL = "https://raw.githubusercontent.com/jaka2m/botak/main/cek/";
     const proxyResponse = await fetch(`${GITHUB_BASE_URL}proxyList.txt`);
     if (!proxyResponse.ok) {
-      return "\u26A0\uFE0F Gagal mengambil daftar proxy.";
+      return "⚠️ Failed to fetch proxy list.";
     }
     const ipText = await proxyResponse.text();
     const ipLines = ipText.split("\n").filter((line) => line.trim() !== "");
     if (ipLines.length === 0) {
-      return "\u26A0\uFE0F Daftar proxy kosong atau tidak valid.";
+      return "⚠️ Proxy list is empty or invalid.";
     }
     const randomIndex = Math.floor(Math.random() * ipLines.length);
     const randomProxyLine = ipLines[randomIndex];
     const sequenceNumber = randomIndex + 1;
     const [ip, port, country, provider] = randomProxyLine.split(",");
     if (!ip || !port) {
-      return "\u26A0\uFE0F Data IP atau Port tidak lengkap dari daftar proxy.";
+      return "⚠️ Incomplete IP or Port data from proxy list.";
     }
     const checkResponse = await fetch(`https://geovpn.vercel.app/check?ip=${ip}:${port}`);
     if (!checkResponse.ok) {
-      return `\u26A0\uFE0F Gagal cek status IP ${ip}:${port}.`;
+      return `⚠️ Failed to check status for IP ${ip}:${port}.`;
     }
     const text = await checkResponse.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-        return `\u26A0\uFE0F Gagal mem-parsing respons dari server untuk IP ${ip}:${port}. Respons: ${text}`;
+        return `⚠️ Failed to parse response from server for IP ${ip}:${port}. Response: ${text}`;
     }
     if (data.status?.toUpperCase() !== "ACTIVE") {
-      return `\u26A0\uFE0F IP ${ip}:${port} tidak aktif.`;
+      return `⚠️ IP ${ip}:${port} is not active.`;
     }
     const pathIPPORT = `/Free-VPN-CF-Geo-Project/${ip}=${port}`;
     const pathCD = `/Free-VPN-CF-Geo-Project/${data.countryCode}${sequenceNumber}`;
@@ -2098,8 +2101,8 @@ ${ssTLSLink2}
 `;
     return configText;
   } catch (error) {
-    console.error("Terjadi kesalahan:", error);
-    return `\u26A0\uFE0F Terjadi kesalahan: ${error.message}`;
+    console.error("An error occurred:", error);
+    return `⚠️ An error occurred: ${error.message}`;
   }
 }
 
@@ -2108,7 +2111,7 @@ async function rotateconfig(chatId, text, options = {}) {
   const command = text.trim();
   const args = command.split(" ");
   if (args.length < 2) {
-    await this.sendMessage(chatId, `\u26A0\uFE0F *Format salah! Gunakan contoh berikut:*
+    await this.sendMessage(chatId, `⚠️ *Incorrect format! Please use the following example:*
 \`/rotate id\``, {
       parse_mode: "Markdown",
       ...options,
@@ -2158,7 +2161,7 @@ async function rotateconfig(chatId, text, options = {}) {
     "jp"
   ];
   if (!validCountries.includes(countryCode)) {
-    await this.sendMessage(chatId, `\u26A0\uFE0F *Kode negara tidak valid! Gunakan kode yang tersedia.*`, {
+    await this.sendMessage(chatId, `⚠️ *Invalid country code! Please use one of the available codes.*`, {
       parse_mode: "Markdown",
       ...options,
       reply_markup: {
@@ -2167,7 +2170,7 @@ async function rotateconfig(chatId, text, options = {}) {
     });
     return;
   }
-  const loadingMessage = await this.sendMessage(chatId, "\u23F3 Sedang memproses config...", options);
+  const loadingMessage = await this.sendMessage(chatId, "⏳ Processing config...", options);
   try {
     const response = await fetch("https://raw.githubusercontent.com/jaka2m/botak/refs/heads/main/cek/proxyList.txt");
     const ipText = await response.text();
@@ -2178,7 +2181,7 @@ async function rotateconfig(chatId, text, options = {}) {
     });
 
     if (filteredIps.length === 0) {
-      await this.sendMessage(chatId, `\u26A0\uFE0F *Tidak ada IP untuk negara ${countryCode.toUpperCase()}*`, {
+      await this.sendMessage(chatId, `⚠️ *No IP available for country ${countryCode.toUpperCase()}*`, {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
@@ -2190,7 +2193,7 @@ async function rotateconfig(chatId, text, options = {}) {
     }
     const [ip, port, country, provider] = filteredIps[Math.floor(Math.random() * filteredIps.length)].split(",");
     if (!ip || !port) {
-      await this.sendMessage(chatId, `\u26A0\uFE0F Data IP atau Port tidak lengkap dari daftar proxy.`, {
+      await this.sendMessage(chatId, `⚠️ Incomplete IP or Port data from proxy list.`, {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
@@ -2206,7 +2209,7 @@ async function rotateconfig(chatId, text, options = {}) {
     try {
         ipData = JSON.parse(text);
     } catch (e) {
-        await this.sendMessage(chatId, `\u26A0\uFE0F Gagal mem-parsing respons dari server untuk IP ${ip}:${port}. Respons: ${text}`, {
+        await this.sendMessage(chatId, `⚠️ Failed to parse response from server for IP ${ip}:${port}. Response: ${text}`, {
             parse_mode: "Markdown",
             ...options,
             reply_markup: {
@@ -2217,7 +2220,7 @@ async function rotateconfig(chatId, text, options = {}) {
         return;
     }
     if (ipData.status !== "ACTIVE") {
-      await this.sendMessage(chatId, `\u26A0\uFE0F *IP ${ip}:${port} tidak aktif.*`, {
+      await this.sendMessage(chatId, `⚠️ *IP ${ip}:${port} is not active.*`, {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
@@ -2282,7 +2285,7 @@ ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:80?encryption=none&type=
     await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
   } catch (error) {
     console.error(error);
-    await this.sendMessage(chatId, `\u26A0\uFE0F Terjadi kesalahan: ${error.message}`, { ...options,
+    await this.sendMessage(chatId, `⚠️ An error occurred: ${error.message}`, { ...options,
         reply_markup: {
             inline_keyboard: [[backToMenuButton]]
         }
@@ -2295,6 +2298,7 @@ ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:80?encryption=none&type=
 let globalIpList = [];
 let globalCountryCodes = [];
 const menuMessageIds = new Map();
+const broadcastState = new Map();
 async function fetchProxyList(url) {
   const response = await fetch(url);
   const ipText = await response.text();
@@ -2318,14 +2322,14 @@ function buildCountryButtons(page = 0, pageSize = 15) {
     inline_keyboard.push(buttons.slice(i, i + 3));
   }
   const navButtons = [];
-  if (page > 0) navButtons.push({ text: "⬅️ Prev", callback_data: `randomip_page_${page - 1}` });
-if (end < globalCountryCodes.length) navButtons.push({ text: "Next ➡️", callback_data: `randomip_page_${page + 1}` });
+  if (page > 0) navButtons.push({ text: "⬅️ Sebelumnya", callback_data: `randomip_page_${page - 1}` });
+if (end < globalCountryCodes.length) navButtons.push({ text: "Berikutnya ➡️", callback_data: `randomip_page_${page + 1}` });
 if (navButtons.length) inline_keyboard.push(navButtons);
   
   // Hanya tombol developer dan donasi yang tetap
   inline_keyboard.push([
-    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
 ]);
   
 return { inline_keyboard };
@@ -2392,8 +2396,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
         reply_markup: {
           inline_keyboard: [
             [
-    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
 ],
             [backToMenuButton]
           ]
@@ -2404,8 +2408,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
       const keyboard = {
         inline_keyboard: [
           [
-    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
 ],
           [backToMenuButton]
         ]
@@ -2425,23 +2429,22 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
 const MENU_COMMANDS = [
     // Page 1
     { text: "🎌 Config by Flag", callback_data: "menu_cmd_proxyip" },
-    { text: "🎲 Random Mix Config", callback_data: "menu_cmd_randomconfig" },
-    { text: "🔄 Sub Convert", callback_data: "menu_cmd_converter" },
-    { text: "🔄 Config Rotate", callback_data: "menu_cmd_config" },
+    { text: "🎲 Random Config", callback_data: "menu_cmd_randomconfig" },
+    { text: "🔄 Convert Sub", callback_data: "menu_cmd_converter" },
+    { text: "🔄 Rotate Config", callback_data: "menu_cmd_config" },
     { text: "🔗 Sub Link", callback_data: "menu_cmd_sublink" },
     // Page 2
-    { text: "🌐 Gen. Proxy IPs", callback_data: "menu_cmd_proxy" },
+    { text: "🌐 Create IP Proxy", callback_data: "menu_cmd_proxy" },
     { text: "📈 Usage Statistics", callback_data: "menu_cmd_stats" },
-    { text: "🔍 Proxy Search Tutorial", callback_data: "menu_cmd_findproxy" },
-    { text: "👥 List User Bot", callback_data: "menu_cmd_userlist" },
+    { text: "🔍 Find Proxy Tutorial", callback_data: "menu_cmd_findproxy" },
+    { text: "👥 Bot User List", callback_data: "menu_cmd_userlist" },
     { text: "📡 Ping Bot", callback_data: "menu_cmd_ping" },
     // Page 3
-    { text: "📱 Cek Kuota XL", callback_data: "menu_cmd_kuota" },
+    { text: "📱 Check XL Quota", callback_data: "menu_cmd_kuota" },
     { text: "➕ Add Wildcard", callback_data: "menu_cmd_add" },
-    { text: "➖ Dell Wildcard", callback_data: "menu_cmd_del" },
+    { text: "➖ Delete Wildcard", callback_data: "menu_cmd_del" },
     { text: "📝 List Wildcard", callback_data: "menu_cmd_listwildcard" },
-    { text: "📢 Broadcast Msg", callback_data: "menu_cmd_broadcast" },
-    
+    { text: "📢 Broadcast Message", callback_data: "menu_cmd_broadcast" },
 ];
 
 function getMenuKeyboard(page = 0) {
@@ -2457,15 +2460,15 @@ function getMenuKeyboard(page = 0) {
     if (paginatedItems.length > 3) keyboard.push(paginatedItems.slice(3, 5));
 
     const navButtons = [];
-    if (page > 0) navButtons.push({ text: " Prev", callback_data: `menu_page_${page - 1}` });
-    if (page < totalPages - 1) navButtons.push({ text: "Next ", callback_data: `menu_page_${page + 1}` });
+    if (page > 0) navButtons.push({ text: "⬅️ Previous", callback_data: `menu_page_${page - 1}` });
+    if (page < totalPages - 1) navButtons.push({ text: "Next ➡️", callback_data: `menu_page_${page + 1}` });
 
     if (navButtons.length > 0) keyboard.push(navButtons);
 
     // Hanya tombol developer dan donasi yang tetap di setiap halaman
     keyboard.push([
-        { text: " 👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-        { text: " ❤️ Donation", callback_data: "menu_cmd_donate" }
+        { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+        { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
     ]);
 
     return { inline_keyboard: keyboard };
@@ -2530,7 +2533,7 @@ const TelegramBotku = class {
           await this.editMessageText(
               update.callback_query.message.chat.id,
               update.callback_query.message.message_id,
-              `*Menu Utama Bot*\n Pilih opsi di bawah:`,
+              `*Main Bot Menu*\n  Select an option below:`,
               {
                   parse_mode: "Markdown",
                   reply_markup: keyboard,
@@ -2546,33 +2549,49 @@ const TelegramBotku = class {
         const command = data.replace("menu_cmd_", "");
         
         switch(command) {
+          case "broadcast":
+            // Start interactive broadcast flow
+            const chatId = update.callback_query.message.chat.id;
+            const messageId = update.callback_query.message.message_id;
+            broadcastState.set(chatId, { step: 'awaiting_message' });
+            await this.sendMessage(chatId, 
+              " Please send the message you want to broadcast (text, image, or video).", 
+              {
+                reply_markup: {
+                  inline_keyboard: [[{ text: " Cancel", callback_data: "cancel_broadcast" }]]
+                },
+                reply_to_message_id: messageId, 
+                ...options 
+              }
+            );
+            break;
           case "proxy":
             await handleRandomIpCommand(this, update.callback_query.message.chat.id, { reply_to_message_id: update.callback_query.message.message_id, ...options });
             break;
           case "findproxy":
-            const menuText = ` *TUTORIAL MENCARI PROXY* 
+            const menuText = `  *PROXY SEARCH TUTORIAL*  
 
-Berikut adalah beberapa situs dan teknik untuk mencari proxy:
+Here are some sites and techniques for finding proxies:
 
  *ZOOMEYE.HK*
-Kueri pencarian:
+Search query:
 \`\`\`
 +app:"Cloudflare" +service:"http" +title:"400 The plain HTTP request was sent to HTTPS port" +country:"Singapore"
 \`\`\`
 
  *BINARYEDGE.IO*
-Kueri pencarian:
+Search query:
 \`\`\`
 country:ID title:"400 The plain HTTP request was sent to HTTPS port" product:nginx protocol:"tcp" name:http banner:"Server: cloudflare" banner:"CF-RAY: -" NOT asn:209242
 \`\`\`
 
  *CENSYS.IO*
-Kueri pencarian dasar:
+Basic search query:
 \`\`\`
 not autonomous_system.name: "CLOUDFLARE*" and services: (software.product: "CloudFlare Load Balancer" and http.response.html_title: "400 The plain HTTP request was sent to HTTPS port") and location.country: "Indonesia"
 \`\`\`
 
-Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
+To check the proxy status, send the search results directly to this bot.
 
 *Dev:* [Geo Project](https://t.me/sampiiiiu)`;
 
@@ -2584,14 +2603,14 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
     ],
     [
         { text: "📡 CENSYS.IO", url: "https://search.censys.io" },
-        { text: "📝 CATATAN", callback_data: "findproxy_notes" }
+        { text: "📝 NOTES", callback_data: "findproxy_notes" }
     ],
     [
-        { text: "⬅️ Back to Menu", callback_data: "menu_page_0" }
+        backToMenuButton
     ],
     [
         { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-        { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
+        { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
     ]
 ]
             };
@@ -2609,32 +2628,35 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
             try {
                 await this.sendPhoto(update.callback_query.message.chat.id, imageUrl, {
                     caption: `
- *Dukung Pengembangan Bot!* 
+  *Support Bot Development!*  
 
-Bantu kami terus berkembang dengan scan QRIS di atas!
+Help us continue to grow by scanning the QRIS above!
 
- *Fitur yang akan datang:*
- Server yang lebih cepat
- Lebih banyak negara proxy
- Fitur premium eksklusif
- Update rutin dan perbaikan bug
+  *Upcoming Features:*
+ Faster servers
+ More proxy countries
+ Exclusive premium features
+ Regular updates and bug fixes
 
-Terima kasih atas dukungannya! 
+Thank you for your support!  
 
-_ Tim GEO BOT SERVER_
+_ GEO BOT SERVER Team_
 `.trim(),
                     parse_mode: "Markdown",
                    reply_markup: {
     inline_keyboard: [
         [
             { 
-                text: "🌍 GEO PROJECT", 
+                text: "👤 GEO PROJECT", 
                 url: "https://t.me/sampiiiiu" 
             },
             { 
-                text: "📢 Channel Update", 
-                url: "https://t.me/sampiiiiu" 
+                text: "📢 Channel", 
+                url: "https://t.me/testikuy_mang" 
             }
+        ],
+        [
+            backToMenuButton
         ]
     ]
 },
@@ -2644,9 +2666,9 @@ reply_to_message_id: update.callback_query.message.message_id,
             } catch (error) {
                 console.error(" Error sending donation photo:", error);
                 await this.sendMessage(update.callback_query.message.chat.id, 
-                    ` *Dukung Pengembangan Bot!*\n\n` +
-                    `Bantu kami terus berkembang dengan donasi melalui QRIS.\n\n` +
-                    `Terima kasih atas dukungannya! \n\n` +
+                    `  *Support Bot Development!*\n\n` +
+                    `Help us continue to grow with a donation via QRIS.\n\n` +
+                    `Thank you for your support!  \n\n` +
                     ` [GEO PROJECT](https://t.me/sampiiiiu)`,
                     { parse_mode: "Markdown", reply_to_message_id: update.callback_query.message.message_id, ...options }
                 );
@@ -2698,10 +2720,10 @@ reply_to_message_id: update.callback_query.message.message_id,
               const result = await response.json();
               
               if (!result.data?.viewer?.zones?.length) {
-                throw new Error("Gagal mengambil data pemakaian.");
+                throw new Error("Failed to fetch usage data.");
               }
 
-              let usageText = " *Data Pemakaian 10 Hari Terakhir:*\n\n";
+              let usageText = "  *Usage Data for the Last 10 Days:*\n\n";
               let totalBytes = 0;
               let totalRequests = 0;
 
@@ -2713,14 +2735,14 @@ reply_to_message_id: update.callback_query.message.message_id,
                 const dailyData = (day.sum.bytes / 1024 ** 4).toFixed(2);
                 const dailyRequests = day.sum.requests.toLocaleString();
                 
-                usageText += ` *Tanggal:* ${tanggal}\n`;
-                usageText += ` *Data Harian:* ${dailyData} TB\n`;
-                usageText += ` *Requests Harian:* ${dailyRequests}\n\n`;
+                usageText += `  *Date:* ${tanggal}\n`;
+                usageText += `  *Daily Data:* ${dailyData} TB\n`;
+                usageText += `  *Daily Requests:* ${dailyRequests}\n\n`;
               });
 
               const totalDataTB = (totalBytes / 1024 ** 4).toFixed(2);
               
-              usageText += "* Total Keseluruhan:*\n";
+              usageText += "*  Overall Total:*\n";
               usageText += ` *Total Data:* ${totalDataTB} TB\n`;
               usageText += ` *Total Requests:* ${totalRequests.toLocaleString()}`;
 
@@ -2736,7 +2758,7 @@ reply_to_message_id: update.callback_query.message.message_id,
             } catch (error) {
               await this.sendMessage(
                 update.callback_query.message.chat.id,
-                ` Gagal mengambil data pemakaian.\n\n_Error:_ ${error.message}`,
+                `   Failed to fetch usage data.\n\n_Error:_ ${error.message}`,
                 { parse_mode: "Markdown", reply_to_message_id: update.callback_query.message.message_id, ...options,
                   reply_markup: {
                     inline_keyboard: [[backToMenuButton]]
@@ -2746,9 +2768,9 @@ reply_to_message_id: update.callback_query.message.message_id,
             }
             break;
           default:
-            // Untuk command lainnya, kirim pesan placeholder
+            // For other commands, send a placeholder message
             await this.sendMessage(update.callback_query.message.chat.id, 
-              ` *Fitur ${command} dalam pengembangan*\n\nFitur ini sedang dalam proses pengembangan. Silakan coba lagi nanti.`,
+              `  *${command} feature is under development*\n\nThis feature is currently being developed. Please try again later.`,
               { parse_mode: "Markdown", reply_to_message_id: update.callback_query.message.message_id, ...options }
             );
         }
@@ -2759,24 +2781,24 @@ reply_to_message_id: update.callback_query.message.message_id,
       
       // Handle findproxy_notes callback (di luar menu_cmd_)
       if (data === "findproxy_notes") {
-        const notesText = ` *CATATAN PENGGUNAAN*
+        const notesText = `  *USAGE NOTES*
 
-*Catatan:*
-- Tambahkan filter port dengan \`and services.port=443\`
-- Filter provider: \`autonomous_system.name: "nama_provider"\`
+*Notes:*
+- Add port filter with \`and services.port=443\`
+- Filter provider: \`autonomous_system.name: "provider_name"\`
 
-Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
+To check the proxy status, send the search results directly to this bot.
 
 *Dev:* [Geo Project](https://t.me/sampiiiiu)`;
 
         const notesKeyboard = {
             inline_keyboard: [
                 [
-                    { text: " Back to Menu", callback_data: "menu_page_0" }
+                    backToMenuButton
                 ],
                 [
-                    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-                    { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+                    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+                    { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
                 ]
             ]
         };
@@ -2818,7 +2840,7 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
     if (/^\/menu(@\w+)?$/.test(text)) {
         const page = 0;
         const keyboard = getMenuKeyboard(page);
-        const menuText = `*Menu Utama Bot*\n Pilih opsi di bawah:`;
+        const menuText = `*Main Bot Menu*\n  Select an option below:`;
         const sentMessage = await this.sendMessage(chatId, menuText, {
             parse_mode: "Markdown",
             reply_markup: keyboard,
@@ -2838,29 +2860,29 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
     }
     
     if (/^\/findproxy(@\w+)?$/.test(text)) {
-      const menuText = ` *TUTORIAL MENCARI PROXY* 
+      const menuText = `  *PROXY SEARCH TUTORIAL*  
 
-Berikut adalah beberapa situs dan teknik untuk mencari proxy:
+Here are some sites and techniques for finding proxies:
 
  *ZOOMEYE.HK*
-Kueri pencarian:
+Search query:
 \`\`\`
 +app:"Cloudflare" +service:"http" +title:"400 The plain HTTP request was sent to HTTPS port" +country:"Singapore"
 \`\`\`
 
  *BINARYEDGE.IO*
-Kueri pencarian:
+Search query:
 \`\`\`
 country:ID title:"400 The plain HTTP request was sent to HTTPS port" product:nginx protocol:"tcp" name:http banner:"Server: cloudflare" banner:"CF-RAY: -" NOT asn:209242
 \`\`\`
 
  *CENSYS.IO*
-Kueri pencarian dasar:
+Basic search query:
 \`\`\`
 not autonomous_system.name: "CLOUDFLARE*" and services: (software.product: "CloudFlare Load Balancer" and http.response.html_title: "400 The plain HTTP request was sent to HTTPS port") and location.country: "Indonesia"
 \`\`\`
 
-Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
+To check the proxy status, send the search results directly to this bot.
 
 *Dev:* [Geo Project](https://t.me/sampiiiiu)`;
 
@@ -2872,14 +2894,14 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
     ],
     [
         { text: "📡 CENSYS.IO", url: "https://search.censys.io" },
-        { text: "📝 CATATAN", callback_data: "findproxy_notes" }
+        { text: "📝 NOTES", callback_data: "findproxy_notes" }
     ],
     [
-        { text: "⬅️ Back to Menu", callback_data: "menu_page_0" }
+        backToMenuButton
     ],
     [
         { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
-        { text: "❤️ Donation", callback_data: "menu_cmd_donate" }
+        { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
     ]
 ]
       };
@@ -2899,34 +2921,35 @@ Untuk mengecek status proxy, kirim hasil pencarian langsung ke bot ini.
     try {
         await this.sendPhoto(chatId, imageUrl, {
             caption: `
- *Dukung Pengembangan Bot!* 
+  *Support Bot Development!*  
 
-Bantu kami terus berkembang dengan scan QRIS di atas!
+Help us continue to grow by scanning the QRIS above!
 
- *Fitur yang akan datang:*
- Server yang lebih cepat
- Lebih banyak negara proxy
- Fitur premium eksklusif
- Update rutin dan perbaikan bug
+  *Upcoming Features:*
+ Faster servers
+ More proxy countries
+ Exclusive premium features
+ Regular updates and bug fixes
 
-Terima kasih atas dukungannya! 
+Thank you for your support!  
 
-_ Tim GEO BOT SERVER_
+_ GEO BOT SERVER Team_
 `.trim(),
             parse_mode: "Markdown",
             reply_markup: {
     inline_keyboard: [
         [
             { 
-                text: "🌍 GEO PROJECT", 
+                text: "👤 GEO PROJECT", 
                 url: "https://t.me/sampiiiiu" 
+            },
+            { 
+                text: "📢 Channel", 
+                url: "https://t.me/testikuy_mang" 
             }
         ],
         [
-            { 
-                text: "📢 Channel Update", 
-                url: "https://t.me/sampiiiiu" 
-            }
+            backToMenuButton
         ]
     ]
 },
@@ -2938,9 +2961,9 @@ reply_to_message_id: messageId,
         console.error(" Error sending donation photo:", error);
         // Fallback to text message if image fails
         await this.sendMessage(chatId, 
-            ` *Dukung Pengembangan Bot!*\n\n` +
-            `Bantu kami terus berkembang dengan donasi melalui QRIS.\n\n` +
-            `Terima kasih atas dukungannya! \n\n` +
+            `  *Support Bot Development!*\n\n` +
+            `Help us continue to grow with a donation via QRIS.\n\n` +
+            `Thank you for your support!  \n\n` +
             ` [GEO PROJECT](https://t.me/sampiiiiu)`,
             { parse_mode: "Markdown", reply_to_message_id: messageId, ...options }
         );
@@ -3126,11 +3149,11 @@ function createProtocolInlineKeyboard(ip, port) {
   return {
     inline_keyboard: [
       [
-        { text: "🟣 VLESS", callback_data: `PROTOCOL|VLESS|${ip}|${port}` },
-        { text: "🟠 TROJAN", callback_data: `PROTOCOL|TROJAN|${ip}|${port}` }
+        { text: "⚡ VLESS", callback_data: `PROTOCOL|VLESS|${ip}|${port}` },
+        { text: "🎯 TROJAN", callback_data: `PROTOCOL|TROJAN|${ip}|${port}` }
       ],
       [
-        { text: "🔵 SHADOWSOCKS", callback_data: `PROTOCOL|SHADOWSOCKS|${ip}|${port}` }
+        { text: "✨ SHADOWSOCKS", callback_data: `PROTOCOL|SHADOWSOCKS|${ip}|${port}` }
       ]
     ]
   };
@@ -3140,11 +3163,11 @@ function createInitialWildcardInlineKeyboard(ip, port, protocol) {
   return {
     inline_keyboard: [
       [
-        { text: " NO WILDCARD", callback_data: `NOWILDCARD|${protocol}|${ip}|${port}` },
-        { text: " WILDCARD", callback_data: `SHOW_WILDCARD|${protocol}|${ip}|${port}` }
+        { text: "✅ TANPA WILDCARD", callback_data: `NOWILDCARD|${protocol}|${ip}|${port}` },
+        { text: "☑️ DENGAN WILDCARD", callback_data: `SHOW_WILDCARD|${protocol}|${ip}|${port}` }
       ],
       [
-        { text: " Back", callback_data: `BACK|${ip}|${port}` }
+        { text: "⬅️ Kembali", callback_data: `BACK|${ip}|${port}` }
       ]
     ]
   };
@@ -3152,11 +3175,11 @@ function createInitialWildcardInlineKeyboard(ip, port, protocol) {
 
 function createWildcardOptionsInlineKeyboard(ip, port, protocol) {
   const buttons = WILDCARD_OPTIONS.map((option, index) => [
-    { text: ` ${index + 1}. ${option.text}`, callback_data: `WILDCARD|${protocol}|${ip}|${port}|${option.value}` }
+    { text: `🐛 ${index + 1}. ${option.text}`, callback_data: `WILDCARD|${protocol}|${ip}|${port}|${option.value}` }
   ]);
   
   buttons.push([
-    { text: " Kembali", callback_data: `BACK|${ip}|${port}` }
+    { text: "⬅️ Kembali", callback_data: `BACK|${ip}|${port}` }
   ]);
   
   return { inline_keyboard: buttons };
@@ -3314,12 +3337,12 @@ Please wait while it is being processed...
         return new Response("OK", { status: 200 });
       }
       const { isp, country, delay, status } = data;
-      const infoText = `\`\`\`INFORMATION
+      const infoText = `\`\`\`INFORMASI
 IP     : ${ip}
 PORT   : ${port}
 ISP    : ${isp}
-Country: ${country || "-"}
-Delay  : ${delay || "-"}
+Negara: ${country || "-"}
+Penundaan  : ${delay || "-"}
 Status : ${status || "-"}
 \`\`\`
 Pilih protokol:`;
@@ -3369,7 +3392,7 @@ ${configText}
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [[{
-              text: "\u2B05\uFE0F Back",
+              text: "⬅️ Kembali",
               callback_data: `BACK_WILDCARD|${protocol}|${ip}|${port}`
             }]]
           }, ...options
@@ -3398,7 +3421,7 @@ ${configText}
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [[{
-              text: "\u2B05\uFE0F Back",
+              text: "⬅️ Kembali",
               callback_data: `BACK_WILDCARD|${protocol}|${ip}|${port}`
             }]]
           }, ...options
@@ -3485,10 +3508,10 @@ function generateCountryButtons(countryCodes, page = 0, pageSize = 12) {
   );
   const navButtons = [];
   if (page > 0) {
-    navButtons.push({ text: "\u2B05\uFE0F Prev", callback_data: `page_prev_${page - 1}` });
+    navButtons.push({ text: "⬅️ Sebelumnya", callback_data: `page_prev_${page - 1}` });
   }
   if (page < totalPages - 1) {
-    navButtons.push({ text: "Next \u27A1\uFE0F", callback_data: `page_next_${page + 1}` });
+    navButtons.push({ text: "Berikutnya ➡️", callback_data: `page_next_${page + 1}` });
   }
   buttons.push(navButtons);
   return buttons;
@@ -3596,11 +3619,11 @@ async function handleCallbackQuery2(bot, callbackQuery, options = {}) {
       const safeProvider = provider.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10);
       const buttons = [
         [
-          { text: "\u26A1 VLESS", callback_data: `config_vless_${ip}_${port}_${countryCode}_${safeProvider}` },
-          { text: "\u26A1 TROJAN", callback_data: `config_trojan_${ip}_${port}_${countryCode}_${safeProvider}` }
+          { text: "⚡ VLESS", callback_data: `config_vless_${ip}_${port}_${countryCode}_${safeProvider}` },
+          { text: "🎯 TROJAN", callback_data: `config_trojan_${ip}_${port}_${countryCode}_${safeProvider}` }
         ],
         [
-          { text: "\u26A1 SHADOWSOCKS", callback_data: `config_ss_${ip}_${port}_${countryCode}_${safeProvider}` }
+          { text: "✨ SHADOWSOCKS", callback_data: `config_ss_${ip}_${port}_${countryCode}_${safeProvider}` }
         ]
       ];
       let messageText = `\u2705 *Info IP untuk ${getFlagEmoji2(countryCode)} ${countryCode} :*
@@ -4139,11 +4162,11 @@ const TelegramBot = class {
       if (/^\/ping(@\w+)?$/.test(text)) {
         const targetMessageId = menuMessageIds.get(chatId) || messageId;
         const delay = Date.now() - (update.message.date * 1000);
-        const firstMessage = 'Pong!';
+        const firstMessage = 'Pong! 📡';
         const secondMessage = 'Latency: ' + delay + 'ms';
         const replyMarkup = {
             inline_keyboard: [
-                [{ text: " Hubungi Developer", url: "https://t.me/sampiiiiu" }],
+                [{ text: "👨‍💻 Hubungi Pengembang", url: "https://t.me/sampiiiiu" }],
                 [backToMenuButton]
             ]
         };
@@ -4663,11 +4686,11 @@ const SublinkBuilderBot = class {
     if (state.step === "bug") {
      state.bug = text;
      state.step = "limit";
-     await this.sendMessage(chatId, "Masukkan limit (angka antara 1-20):", { reply_to_message_id: state.targetMessageId, ...options });
+     await this.sendMessage(chatId, "Masukkan batas (angka antara 1-20):", { reply_to_message_id: state.targetMessageId, ...options });
     } else if (state.step === "limit") {
      const limit = parseInt(text, 10);
      if (isNaN(limit) || limit < 1 || limit > 20) {
-      await this.sendMessage(chatId, "Input tidak valid. Silakan masukkan angka antara 1 dan 20.", { reply_to_message_id: state.targetMessageId, ...options });
+      await this.sendMessage(chatId, "Masukan tidak valid. Silakan masukkan angka antara 1 dan 20.", { reply_to_message_id: state.targetMessageId, ...options });
      } else {
       state.limit = limit;
       state.step = "country";
@@ -4724,7 +4747,7 @@ const SublinkBuilderBot = class {
     state.step = "tls";
     const keyboard = {
      inline_keyboard: [
-      [{ text: "True", callback_data: "sublink_tls_true" }, { text: "False", callback_data: "sublink_tls_false" }]
+      [{ text: "Aktif", callback_data: "sublink_tls_true" }, { text: "Tidak Aktif", callback_data: "sublink_tls_false" }]
      ]
     };
     await this.editMessageText(chatId, messageId, "Gunakan TLS?", { reply_markup: keyboard, ...options });
@@ -4733,7 +4756,7 @@ const SublinkBuilderBot = class {
     state.step = "wildcard";
     const keyboard = {
      inline_keyboard: [
-      [{ text: "True", callback_data: "sublink_wildcard_true" }, { text: "False", callback_data: "sublink_wildcard_false" }]
+      [{ text: "Aktif", callback_data: "sublink_wildcard_true" }, { text: "Tidak Aktif", callback_data: "sublink_wildcard_false" }]
      ]
     };
     await this.editMessageText(chatId, messageId, "Gunakan Wildcard?", { reply_markup: keyboard, ...options });
@@ -4768,9 +4791,9 @@ const SublinkBuilderBot = class {
              const selectedCountry = COUNTRIES.find(c => c.code.toLowerCase() === state.country);
             
      if (state.country === "all") {
-      countryDisplay = "All Countries";
+      countryDisplay = "Semua Negara";
      } else if (state.country === "random") {
-      countryDisplay = "Random Country";
+      countryDisplay = "Negara Acak";
      } else if (selectedCountry) {
                 // Tampilkan emoji dan nama negara di caption hasil akhir
                 countryDisplay = `${flag(selectedCountry.code)} ${selectedCountry.name} (${selectedCountry.code})`;
@@ -4786,11 +4809,11 @@ const SublinkBuilderBot = class {
 🐛 *Bug:* ${state.bug}
 🔒 *TLS:* ${state.tls}
 🎯 *Wildcard:* ${state.wildcard}
-📊 *Limit:* ${state.limit}
-🌍 *Country:* ${countryDisplay}
+📊 *Batas:* ${state.limit}
+🌍 *Negara:* ${countryDisplay}
 ━━━━━━━━━━━━━━━━━
 
-👇 *Klik link di bawah untuk copy:*
+👇 *Klik link di bawah untuk menyalin:*
 
 ${url}`;
      await this.deleteMessage(chatId, state.processingMessageId);
@@ -4851,6 +4874,9 @@ Silakan coba lagi dengan parameter yang berbeda.`, {
       ],
       [
         { text: "🏄 Surfboard", callback_data: "sublink_app_surfboard" }
+      ],
+      [
+        backToMenuButton
       ]
     ]
   };
