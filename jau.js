@@ -2097,7 +2097,7 @@ ${trojanTLSLink2}
 ${ssTLSLink2}
 \`\`\`
 
-\u{1F468}\u200D\u{1F4BB} Dev : [GEO PROJECT](https://t.me/sampiiiiu)
+\u{1F468}\u200D\u{1F4BB} Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
     return configText;
   } catch (error) {
@@ -2273,7 +2273,7 @@ ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:443?encryption=none&type
 ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:80?encryption=none&type=ws&host=${HOSTKU2}&path=${encodeURIComponent(path)}&security=none&sni=${HOSTKU2}#${encodedSsLabelNTLS}
 \`\`\`
 
-\u{1F468}\u200D\u{1F4BB} Dev : [GEO PROJECT](https://t.me/sampiiiiu)
+\u{1F468}\u200D\u{1F4BB} Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
     await this.sendMessage(chatId, configText, {
       parse_mode: "Markdown",
@@ -2322,14 +2322,14 @@ function buildCountryButtons(page = 0, pageSize = 15) {
     inline_keyboard.push(buttons.slice(i, i + 3));
   }
   const navButtons = [];
-  if (page > 0) navButtons.push({ text: "⬅️ Sebelumnya", callback_data: `randomip_page_${page - 1}` });
-if (end < globalCountryCodes.length) navButtons.push({ text: "Berikutnya ➡️", callback_data: `randomip_page_${page + 1}` });
+  if (page > 0) navButtons.push({ text: "⬅️ Prev", callback_data: `randomip_page_${page - 1}` });
+if (end < globalCountryCodes.length) navButtons.push({ text: "Next ➡️", callback_data: `randomip_page_${page + 1}` });
 if (navButtons.length) inline_keyboard.push(navButtons);
   
-  // Hanya tombol developer dan donasi yang tetap
+  // Hanya tombol developer dan Donate yang tetap
   inline_keyboard.push([
-    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
 ]);
   
 return { inline_keyboard };
@@ -2396,8 +2396,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
         reply_markup: {
           inline_keyboard: [
             [
-    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
 ],
             [backToMenuButton]
           ]
@@ -2408,8 +2408,8 @@ async function handleCallbackQuery(bot, callbackQuery, options = {}) {
       const keyboard = {
         inline_keyboard: [
           [
-    { text: "👨‍💻 Pengembang", url: "https://t.me/sampiiiiu" },
-    { text: "❤️ Donasi", callback_data: "menu_cmd_donate" }
+    { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+    { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
 ],
           [backToMenuButton]
         ]
@@ -2465,7 +2465,7 @@ function getMenuKeyboard(page = 0) {
 
     if (navButtons.length > 0) keyboard.push(navButtons);
 
-    // Hanya tombol developer dan donasi yang tetap di setiap halaman
+    // Hanya tombol developer dan Donate yang tetap di setiap halaman
     keyboard.push([
         { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
         { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
@@ -2593,7 +2593,7 @@ not autonomous_system.name: "CLOUDFLARE*" and services: (software.product: "Clou
 
 To check the proxy status, send the search results directly to this bot.
 
-*Dev:* [Geo Project](https://t.me/sampiiiiu)`;
+*Developer:* [Geo Project](https://t.me/sampiiiiu)`;
 
             const keyboard = {
                 inline_keyboard: [
@@ -2789,7 +2789,7 @@ reply_to_message_id: update.callback_query.message.message_id,
 
 To check the proxy status, send the search results directly to this bot.
 
-*Dev:* [Geo Project](https://t.me/sampiiiiu)`;
+*Developer:* [Geo Project](https://t.me/sampiiiiu)`;
 
         const notesKeyboard = {
             inline_keyboard: [
@@ -2884,7 +2884,7 @@ not autonomous_system.name: "CLOUDFLARE*" and services: (software.product: "Clou
 
 To check the proxy status, send the search results directly to this bot.
 
-*Dev:* [Geo Project](https://t.me/sampiiiiu)`;
+*Developer:* [Geo Project](https://t.me/sampiiiiu)`;
 
       const keyboard = {
           inline_keyboard: [
@@ -3229,7 +3229,7 @@ ${vlessNTLS}
 
  [QR Code URL](${qrUrl})
  [View Google Maps](https://www.google.com/maps?q=${config.latitude},${config.longitude})
- Dev : [GEO PROJECT](https://t.me/sampiiiiu)
+ Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
 
   } else if (protocol === "TROJAN") {
@@ -3248,7 +3248,7 @@ ${configString2}
 
  [QR Code URL](${qrUrl})
  [View Google Maps](https://www.google.com/maps?q=${config.latitude},${config.longitude})
- Dev : [GEO PROJECT](https://t.me/sampiiiiu)
+ Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
 
   } else if (protocol === "SHADOWSOCKS") {
@@ -3267,7 +3267,7 @@ ${configString2}
 
  [QR Code URL](${qrUrl})
  [View Google Maps](https://www.google.com/maps?q=${config.latitude},${config.longitude})
- Dev : [GEO PROJECT](https://t.me/sampiiiiu)
+ Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
 
   } else {
@@ -3508,10 +3508,10 @@ function generateCountryButtons(countryCodes, page = 0, pageSize = 12) {
   );
   const navButtons = [];
   if (page > 0) {
-    navButtons.push({ text: "⬅️ Sebelumnya", callback_data: `page_prev_${page - 1}` });
+    navButtons.push({ text: "⬅️ Prev", callback_data: `page_prev_${page - 1}` });
   }
   if (page < totalPages - 1) {
-    navButtons.push({ text: "Berikutnya ➡️", callback_data: `page_next_${page + 1}` });
+    navButtons.push({ text: "Next ➡️", callback_data: `page_next_${page + 1}` });
   }
   buttons.push(navButtons);
   return buttons;
@@ -4162,11 +4162,11 @@ const TelegramBot = class {
       if (/^\/ping(@\w+)?$/.test(text)) {
         const targetMessageId = menuMessageIds.get(chatId) || messageId;
         const delay = Date.now() - (update.message.date * 1000);
-        const firstMessage = 'Pong! 📡';
+        const firstMessage = 'Pong!🏓';
         const secondMessage = 'Latency: ' + delay + 'ms';
         const replyMarkup = {
             inline_keyboard: [
-                [{ text: "👨‍💻 Hubungi Pengembang", url: "https://t.me/sampiiiiu" }],
+                [{ text: "👨‍💻 Hubungi Developer", url: "https://t.me/sampiiiiu" }],
                 [backToMenuButton]
             ]
         };
@@ -4343,7 +4343,8 @@ const CekkuotaBotku = class {
             return new Response("OK", { status: 200 });
         }
 
-        const phoneRegex = /^08[1-9][0-9]{7,10}$/;
+    // Validasi format nomor
+    const phoneRegex = /^08[1-9][0-9]{7,10}$/;
         if (!phoneRegex.test(number)) {
             await this.sendMessage(chatId,
                 " *FORMAT NOMOR TIDAK VALID*\n\n" +
@@ -4360,167 +4361,152 @@ const CekkuotaBotku = class {
             return new Response("OK", { status: 200 });
         }
 
-        const loadingMessage = await this.sendMessage(chatId,
-            " *Mengecek Kuota...*\n\n" +
-            ` Nomor: \`${number}\`\n` +
-            " Mohon tunggu sebentar...",
-            {
-                parse_mode: "Markdown",
-                reply_to_message_id: messageId,
-                ...options
+    const loadingMessage = await this.sendMessage(chatId, 
+        "🔄 *Mengecek Kuota...*\n\n" +
+        `📞 Nomor: \`${number}\`\n` +
+        "⏳ Mohon tunggu sebentar...",
+        { 
+            parse_mode: "Markdown",
+            ...options 
+        }
+    );
+    const messageIdToDelete = loadingMessage && loadingMessage.result ? loadingMessage.result.message_id : null;
+
+    try {
+        const response = await fetch(`https://api.allorigins.win/raw?url=https://dompul.sampi.workers.dev/?msisdn=${number}`, {
+            headers: {
+                'User-Agent': 'curl/7.81.0'
             }
-        );
-        const messageIdToDelete = loadingMessage && loadingMessage.result ? loadingMessage.result.message_id : null;
+        });
+        const responseText = await response.text();
 
         try {
-            const response = await fetch(`https://api.allorigins.win/raw?url=https://dompul.sampi.workers.dev/?msisdn=${number}`, {
-                headers: {
-                    'User-Agent': 'curl/7.81.0'
-                }
-            });
-            const responseText = await response.text();
-
-            try {
-                const data = JSON.parse(responseText);
+            const data = JSON.parse(responseText);
+            
+            if (data.statusCode === 200 && data.status) {
+                let resultText = data.data.hasil.replace(/<br>/g, "\n");
                 
-                if (data.statusCode === 200 && data.status) {
-                    let resultText = data.data.hasil.replace(/<br>/g, "\n");
-                    
-                    const lines = resultText.split('\n');
-                    let formattedMessage =
-                        " *INFORMASI KUOTA PAKET DATA*\n\n" +
-                        ` *Nomor:* \`${number}\`\n` +
-                        "\n\n";
-                    
-                    if (lines?.length) {
-                        for (const line of lines) {
-                            if (line.trim()) {
-                                const trimmedLine = line.trim();
-                                
-                                if (trimmedLine.includes('SISA PULSA')) {
-                                    formattedMessage += ` *${trimmedLine}*\n`;
-                                } else if (trimmedLine.includes('SISA KUOTA')) {
-                                    formattedMessage += ` *${trimmedLine}*\n`;
-                                } else if (trimmedLine.includes('MASA AKTIF')) {
-                                    formattedMessage += ` *${trimmedLine}*\n`;
-                                } else if (trimmedLine.includes(':')) {
-                                    const [key, value] = trimmedLine.split(':');
-                                    formattedMessage += ` *${key.trim()}:* \`${value?.trim() || 'Tidak tersedia'}\`\n`;
-                                } else {
-                                    formattedMessage += ` ${trimmedLine}\n`;
-                                }
+                // Simulasi struktur data dengan loop
+                const lines = resultText.split('\n');
+                let formattedMessage = 
+                    "📊 *INFORMASI KUOTA PAKET DATA*\n\n" +
+                    `📱 *Nomor:* \`${number}\`\n` +
+                    "━━━━━━━━━━━━━━━━━━━━\n\n";
+                
+                // Proses setiap baris dengan gaya loop
+                if (lines?.length) {
+                    for (const line of lines) {
+                        if (line.trim()) {
+                            const trimmedLine = line.trim();
+                            
+                            // Format khusus untuk bagian penting
+                            if (trimmedLine.includes('SISA PULSA')) {
+                                formattedMessage += `💵 *${trimmedLine}*\n`;
+                            } else if (trimmedLine.includes('SISA KUOTA')) {
+                                formattedMessage += `📦 *${trimmedLine}*\n`;
+                            } else if (trimmedLine.includes('MASA AKTIF')) {
+                                formattedMessage += `⏰ *${trimmedLine}*\n`;
+                            } else if (trimmedLine.includes(':')) {
+                                const [key, value] = trimmedLine.split(':');
+                                formattedMessage += `• *${key.trim()}:* \`${value?.trim() || 'Tidak tersedia'}\`\n`;
+                            } else {
+                                formattedMessage += `📌 ${trimmedLine}\n`;
                             }
                         }
                     }
-                    
-                    formattedMessage += "\n\n" +
-                        ` *Update:* ${new Date().toLocaleString('id-ID')}\n` +
-                        " *Info:* Data mungkin tertunda beberapa menit";
-                    
-                    await this.sendMessage(chatId, formattedMessage, {
-                        parse_mode: "Markdown",
-                        reply_to_message_id: messageId,
-                        ...options,
-                        reply_markup: {
-                          inline_keyboard: [[backToMenuButton]]
-                        }
-                    });
-                    
-                } else {
-                    const errorData = {
-                        success: false,
-                        message: data.message || 'Tidak ada informasi tambahan',
-                        possibleCauses: [
-                            "Nomor tidak terdaftar",
-                            "Gangguan sistem operator",
-                            "Data tidak tersedia"
-                        ]
-                    };
-                    
-                    if (errorData?.success === false) {
-                        let errorMessage =
-                            " *GAGAL MENGAMBIL DATA*\n\n" +
-                            ` Nomor: \`${number}\`\n\n` +
-                            " *Kemungkinan penyebab:*\n";
-                        
-                        for (const cause of errorData.possibleCauses) {
-                            errorMessage += ` ${cause}\n`;
-                        }
-                        
-                        errorMessage += `\n *Pesan Error:* ${errorData.message}`;
-                        
-                        await this.sendMessage(chatId, errorMessage, {
-                            parse_mode: "Markdown",
-        reply_to_message_id: messageId,
-        ...options,
-        reply_markup: {
-          inline_keyboard: [[backToMenuButton]]
-        }
-                        });
-                    }
-                }
-            } catch (jsonError) {
-                const errorCases = [
-                    "Format JSON tidak valid",
-                    "Respons API bermasalah",
-                    "Data korup"
-                ];
-                
-                let errorMessage =
-                    " *RESPONS TIDAK VALID*\n\n" +
-                    "Terjadi kesalahan dalam memproses data.\n\n" +
-                    " *Kemungkinan masalah:*\n";
-                
-                for (const errorCase of errorCases) {
-                    errorMessage += ` ${errorCase}\n`;
                 }
                 
-                errorMessage += "\nSilakan coba beberapa saat lagi";
+                formattedMessage += "\n━━━━━━━━━━━━━━━━━━━━\n" +
+                    `🕐 *Update:* ${new Date().toLocaleString('id-ID')}\n` +
+                    "💡 *Info:* Data mungkin tertunda beberapa menit";
                 
-                await this.sendMessage(chatId, errorMessage, {
+                await this.sendMessage(chatId, formattedMessage, { 
                     parse_mode: "Markdown",
-                reply_to_message_id: messageId,
-                ...options,
-                reply_markup: {
-                  inline_keyboard: [[backToMenuButton]]
-                }
+                    ...options 
                 });
+                
+            } else {
+                // Handle error dengan struktur yang konsisten
+                const errorData = {
+                    success: false,
+                    message: data.message || 'Tidak ada informasi tambahan',
+                    possibleCauses: [
+                        "Nomor tidak terdaftar",
+                        "Gangguan sistem operator", 
+                        "Data tidak tersedia"
+                    ]
+                };
+                
+                if (errorData?.success === false) {
+                    let errorMessage = 
+                        "❌ *GAGAL MENGAMBIL DATA*\n\n" +
+                        `📱 Nomor: \`${number}\`\n\n` +
+                        "⚠️ *Kemungkinan penyebab:*\n";
+                    
+                    for (const cause of errorData.possibleCauses) {
+                        errorMessage += `• ${cause}\n`;
+                    }
+                    
+                    errorMessage += `\n📝 *Pesan Error:* ${errorData.message}`;
+                    
+                    await this.sendMessage(chatId, errorMessage, { 
+                        parse_mode: "Markdown",
+                        ...options 
+                    });
+                }
             }
-        } catch (fetchError) {
-            const fetchErrors = [
-                "Tidak dapat terhubung ke server",
-                "Timeout koneksi",
-                "Gangguan jaringan"
+        } catch (jsonError) {
+            const errorCases = [
+                "Format JSON tidak valid",
+                "Respons API bermasalah", 
+                "Data korup"
             ];
             
-            let errorMessage =
-                " *KONEKSI GAGAL*\n\n" +
-                "Tidak dapat terhubung ke server.\n\n" +
-                " *Kemungkinan penyebab:*\n";
+            let errorMessage = 
+                "❌ *RESPONS TIDAK VALID*\n\n" +
+                "Terjadi kesalahan dalam memproses data.\n\n" +
+                "🔧 *Kemungkinan masalah:*\n";
             
-            for (const error of fetchErrors) {
-                errorMessage += ` ${error}\n`;
+            for (const errorCase of errorCases) {
+                errorMessage += `• ${errorCase}\n`;
             }
             
-            errorMessage += `\n *Detail Error:* ${fetchError.message}`;
+            errorMessage += "\nSilakan coba beberapa saat lagi";
             
-            await this.sendMessage(chatId, errorMessage, {
+            await this.sendMessage(chatId, errorMessage, { 
                 parse_mode: "Markdown",
-                reply_to_message_id: messageId,
-                ...options
+                ...options 
             });
-        } finally {
-            if (messageIdToDelete) {
-                const deleteUrl = `${this.baseUrl}/deleteMessage`;
-                await fetch(deleteUrl, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({chat_id: chatId, message_id: messageIdToDelete})
-                });
-            }
         }
-        return new Response("OK", { status: 200 });
+    } catch (fetchError) {
+        const fetchErrors = [
+            "Tidak dapat terhubung ke server",
+            "Timeout koneksi",
+            "Gangguan jaringan"
+        ];
+        
+        let errorMessage = 
+            "❌ *KONEKSI GAGAL*\n\n" +
+            "Tidak dapat terhubung ke server.\n\n" +
+            "🔧 *Kemungkinan penyebab:*\n";
+        
+        for (const error of fetchErrors) {
+            errorMessage += `• ${error}\n`;
+        }
+        
+        errorMessage += `\n📝 *Detail Error:* ${fetchError.message}`;
+        
+        await this.sendMessage(chatId, errorMessage, { 
+            parse_mode: "Markdown",
+            ...options 
+        });
+    } finally {
+        if (messageIdToDelete) {
+            await this.deleteMessage(chatId, messageIdToDelete);
+        }
     }
+    return new Response("OK", { status: 200 });
+}
   }
 };
 
