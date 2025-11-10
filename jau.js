@@ -1,19 +1,19 @@
 // Untuk kemudahan Anda, berikut adalah daftar lengkap variabel lingkungan yang perlu Anda atur di dasbor Cloudflare Worker Anda:
 
 const scriptConfig = {
-  ROOT_DOMAIN: "krukkruk.web.id",
+  ROOT_DOMAIN: "dus.biz.id",
   SERVICE_NAME: "joss",
   API_KEY: "28595cd826561d8014059ca54712d3ca3332c",
   API_EMAIL: "pihajamal@gmail.com",
   ACCOUNT_ID: "716746bfb7638b3aaa909b55740fbc60",
-  ZONE_ID: "fe34f9ac955252fedff0a3907333b456",
+  ZONE_ID: "3be1ebf3d8d2e93efaf8851e6f5b5339",
   OWNER_PASSWORD: "7",
   CLOUDFLARE_API_TOKEN: "jjtpiyLT97DYmd3zVz8Q3vypTSVxDRrcVF7yTBl8",
 };
 
 import { connect } from "cloudflare:sockets";
 
-const proxyListURL = 'https://raw.githubusercontent.com/jaka2m/botak/refs/heads/main/cek/proxyList.txt';
+const proxyListURL = 'https://raw.githubusercontent.com/paoandest/botak/refs/heads/main/cek/proxyList.txt';
 const namaWeb = 'GEO PROJECT'
 const telegrambot = 'https://t.me/VLTRSSbot'
 const channelku = 'https://t.me/testikuy_mang'
