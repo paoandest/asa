@@ -1453,6 +1453,90 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
       return new Response("OK", { status: 200 });
     }
 
+if (/^\/texttoqr(@\w+)?$/.test(text)) {
+  const targetMessageId = menuMessageIds.get(chatId) || messageId;
+  await this.sendMessage(
+    chatId,
+    `📄 Text to QR
+
+➥ Adalah fitur untuk mengubah teks atau link menjadi kode QR, anda juga dapat mengubah config v2ray kedalam bentuk kode QR
+
+Cara penggunaannya:
+Kirim perintah:
+\`\`\`
+.ttq <text>
+\`\`\`
+
+Contoh:
+\`\`\`
+.ttq https://example.com
+\`\`\`
+atau config V2Ray seperti:
+\`\`\`
+.ttq vless://...
+\`\`\`
+
+⚠️ Maksimal 300 karakter.`, {
+      parse_mode: "Markdown",
+      reply_to_message_id: targetMessageId,
+      ...options
+    }
+  );
+  return new Response("OK", {
+    status: 200
+  });
+}
+
+if (text.startsWith(".ttq")) {
+  const query = text.substring(5).trim();
+  
+  // Validasi input
+  if (!query) {
+    await this.sendMessage(
+      chatId,
+      "❌ Masukkan teks atau link setelah perintah `.ttq`\n\nContoh:\n```\n.ttq https://example.com\n```",
+      {
+        parse_mode: "Markdown",
+        reply_to_message_id: messageId,
+        ...options
+      }
+    );
+    return new Response("OK", { status: 200 });
+  }
+
+  // Validasi panjang karakter
+  if (query.length > 300) {
+    await this.sendMessage(
+      chatId,
+      "❌ Teks terlalu panjang! Maksimal 300 karakter.",
+      {
+        reply_to_message_id: messageId,
+        ...options
+      }
+    );
+    return new Response("OK", { status: 200 });
+  }
+
+  const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(query)}&size=512x512`;
+
+  await this.sendPhoto(chatId, url, {
+    caption: "✅ Kode QR berhasil dibuat!",
+    reply_to_message_id: messageId,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "👨‍💻 Developer", url: "https://t.me/sampiiiiu" },
+          { text: "❤️ Donate", callback_data: "menu_cmd_donate" }
+        ]
+      ]
+    },
+    ...options
+  });
+  return new Response("OK", {
+    status: 200
+  });
+}
+
     // Handler untuk konversi link
     if (text.includes("://")) {
       try {
@@ -2508,6 +2592,7 @@ const MENU_COMMANDS = [
     { text: "🔍 Find Proxy", callback_data: "menu_cmd_findproxy" },
     { text: "👥 Bot User List", callback_data: "menu_cmd_userlist" },
     { text: "📡 Ping Bot", callback_data: "menu_cmd_ping" },
+    { text: "📝 Text to QR", callback_data: "menu_cmd_texttoqr" },
     // Page 3
     { text: "📱 Check XL Quota", callback_data: "menu_cmd_kuota" },
     { text: "➕ Add Wildcard", callback_data: "menu_cmd_add" },
@@ -2618,6 +2703,16 @@ const TelegramBotku = class {
         const command = data.replace("menu_cmd_", "");
         
         switch(command) {
+          case "texttoqr":
+            await this.sendMessage(
+              update.callback_query.message.chat.id,
+              "Gunakan perintah `.ttq <text>` untuk mengubah text/link/config v2ray menjadi qr code", {
+                parse_mode: "Markdown",
+                reply_to_message_id: update.callback_query.message.message_id,
+                ...options
+              }
+            );
+            break;
           case "broadcast":
             // Start interactive broadcast flow
             const chatId = update.callback_query.message.chat.id;
@@ -2725,7 +2820,7 @@ _ GEO BOT SERVER Team_
             }
         ],
         [
-            backToMenuButton
+            backToMenuButton 
         ]
     ]
 },
