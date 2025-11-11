@@ -1987,6 +1987,29 @@ Kirimkan link konfigurasi V2Ray dan saya akan mengubahnya ke format:
             parse_mode: "Markdown",
             ...options
         });
+    } else if (data === "show_config_guide") {
+      const helpMsg = `\u{1F31F} *ROTATE CONFIG GUIDE* \u{1F31F}
+
+Type the following command to get a rotated config based on the country:
+
+\`rotate + country_code\`
+
+Available countries:
+id, sg, my, us, ca, in, gb, ir, ae, fi, tr, md, tw, ch, se, nl, es, ru, ro, pl, al, nz, mx, it, de, fr, am, cy, dk, br, kr, vn, th, hk, cn, jp.
+
+Example:
+\`rotate id\`
+\`rotate sg\`
+\`rotate my\`
+
+The bot will randomly select an IP from that country and send its config.`;
+      await this.editMessageText(chatId, messageId, helpMsg, {
+        parse_mode: "Markdown",
+        ...options,
+        reply_markup: {
+          inline_keyboard: [[{ text: "⬅️ Back to Menu", callback_data: "menu_page_0" }]]
+        }
+      });
     }
     
     await this.answerCallbackQuery(callbackQuery.id);
@@ -2150,68 +2173,45 @@ async function rotateconfig(chatId, text, options = {}) {
       parse_mode: "Markdown",
       ...options,
       reply_markup: {
-        inline_keyboard: [[backToMenuButton]]
+        inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
       }
     });
     return;
   }
+  
   const countryCode = args[1].toLowerCase();
   const validCountries = [
-    "id",
-    "sg",
-    "my",
-    "us",
-    "ca",
-    "in",
-    "gb",
-    "ir",
-    "ae",
-    "fi",
-    "tr",
-    "md",
-    "tw",
-    "ch",
-    "se",
-    "nl",
-    "es",
-    "ru",
-    "ro",
-    "pl",
-    "al",
-    "nz",
-    "mx",
-    "it",
-    "de",
-    "fr",
-    "am",
-    "cy",
-    "dk",
-    "br",
-    "kr",
-    "vn",
-    "th",
-    "hk",
-    "cn",
-    "jp"
+    "id", "sg", "my", "us", "ca", "in", "gb", "ir", "ae", "fi", 
+    "tr", "md", "tw", "ch", "se", "nl", "es", "ru", "ro", "pl", 
+    "al", "nz", "mx", "it", "de", "fr", "am", "cy", "dk", "br", 
+    "kr", "vn", "th", "hk", "cn", "jp"
   ];
+  
   if (!validCountries.includes(countryCode)) {
     await this.sendMessage(chatId, `⚠️ *Invalid country code! Please use one of the available codes.*`, {
       parse_mode: "Markdown",
       ...options,
       reply_markup: {
-        inline_keyboard: [[backToMenuButton]]
+        inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
       }
     });
     return;
   }
+  
   const loadingMessage = await this.sendMessage(chatId, "⏳ Processing config...", options);
+  
   try {
     const response = await fetch("https://raw.githubusercontent.com/paoandest/botak/refs/heads/main/cek/proxyList.txt");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const ipText = await response.text();
     const ipList = ipText.split("\n").map((line) => line.trim()).filter((line) => line !== "");
+    
     const filteredIps = ipList.filter(line => {
-        const parts = line.split(',');
-        return parts.length > 2 && parts[2].toLowerCase() === countryCode;
+      const parts = line.split(',');
+      return parts.length > 2 && parts[2].toLowerCase() === countryCode;
     });
 
     if (filteredIps.length === 0) {
@@ -2219,115 +2219,148 @@ async function rotateconfig(chatId, text, options = {}) {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
-          inline_keyboard: [[backToMenuButton]]
+          inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
         }
       });
-      await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
+      await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
       return;
     }
-    const [ip, port, country, provider] = filteredIps[Math.floor(Math.random() * filteredIps.length)].split(",");
+    
+    const randomIp = filteredIps[Math.floor(Math.random() * filteredIps.length)];
+    const [ip, port, country, provider] = randomIp.split(",");
+    
     if (!ip || !port) {
       await this.sendMessage(chatId, `⚠️ Incomplete IP or Port data from proxy list.`, {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
-          inline_keyboard: [[backToMenuButton]]
+          inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
         }
       });
-      await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
+      await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
       return;
     }
+    
     const statusResponse = await fetch(`https://geovpn.vercel.app/check?ip=${ip}:${port}`);
+    if (!statusResponse.ok) {
+      throw new Error(`Status check failed! status: ${statusResponse.status}`);
+    }
+    
     const text = await statusResponse.text();
     let ipData;
     try {
-        ipData = JSON.parse(text);
+      ipData = JSON.parse(text);
     } catch (e) {
-        await this.sendMessage(chatId, `⚠️ Failed to parse response from server for IP ${ip}:${port}. Response: ${text}`, {
-            parse_mode: "Markdown",
-            ...options,
-            reply_markup: {
-              inline_keyboard: [[backToMenuButton]]
-            }
-        });
-        await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
-        return;
+      await this.sendMessage(chatId, `⚠️ Failed to parse response from server for IP ${ip}:${port}. Response: ${text}`, {
+        parse_mode: "Markdown",
+        ...options,
+        reply_markup: {
+          inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
+        }
+      });
+      await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
+      return;
     }
+    
     if (ipData.status !== "ACTIVE") {
       await this.sendMessage(chatId, `⚠️ *IP ${ip}:${port} is not active.*`, {
         parse_mode: "Markdown",
         ...options,
         reply_markup: {
-          inline_keyboard: [[backToMenuButton]]
+          inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
         }
       });
-      await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
+      await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
       return;
     }
-    const getFlagEmoji3 = (code) => code.toUpperCase().split("").map((c) => String.fromCodePoint(127462 + c.charCodeAt(0) - 65)).join("");
-    const generateUUID4 = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    
+    // Helper functions
+    const getFlagEmoji = (code) => code.toUpperCase().split("").map((c) => 
+      String.fromCodePoint(127462 + c.charCodeAt(0) - 65)
+    ).join("");
+    
+    const generateUUID = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = Math.random() * 16 | 0;
       const v = c === "x" ? r : r & 3 | 8;
       return v.toString(16);
     });
-    const toBase642 = (str) => typeof btoa === "function" ? btoa(unescape(encodeURIComponent(str))) : Buffer.from(str, "utf-8").toString("base64");
-    const HOSTKU2 = "joss.dus.biz.id";
-    const path = `/Free-VPN-CF-Geo-Project/${ip}=${port}`;
+    
+    const toBase64 = (str) => {
+      if (typeof btoa === "function") {
+        return btoa(unescape(encodeURIComponent(str)));
+      } else {
+        return Buffer.from(str, "utf-8").toString("base64");
+      }
+    };
+    
+    const HOSTKU = "joss.dus.biz.id";
+    const path = `/Free-VPN-CF-Geo-Project/${countryCode.toUpperCase()}`;
+    const flagEmoji = getFlagEmoji(countryCode);
+    
     const encodedVlessLabelTLS = encodeURIComponent(`ROTATE VLESS ${ipData.isp} ${ipData.country} TLS`);
     const encodedVlessLabelNTLS = encodeURIComponent(`ROTATE VLESS ${ipData.isp} ${ipData.country} NTLS`);
     const encodedTrojanLabelTLS = encodeURIComponent(`ROTATE TROJAN ${ipData.isp} ${ipData.country} TLS`);
     const encodedSsLabelTLS = encodeURIComponent(`ROTATE SHADOWSOCKS ${ipData.isp} ${ipData.country} TLS`);
     const encodedSsLabelNTLS = encodeURIComponent(`ROTATE SHADOWSOCKS ${ipData.isp} ${ipData.country} NTLS`);
+    
     const configText = `
 \`\`\`INFORMATION
 IP      : ${ip}
 PORT    : ${port}
-ISP     : ${provider}
+ISP     : ${provider || 'N/A'}
 COUNTRY : ${ipData.country}
 STATUS  : ${ipData.status}
 \`\`\`
-\u{1F31F} *ROTATE VLESS TLS* \u{1F31F}
+
+*ROTATE VLESS ${countryCode.toUpperCase()} ${flagEmoji} TLS*
 \`\`\`
-vless://${generateUUID4()}@${HOSTKU2}:443?encryption=none&security=tls&sni=${HOSTKU2}&fp=randomized&type=ws&host=${HOSTKU2}&path=${encodeURIComponent(path)}#${encodedVlessLabelTLS}
-\`\`\`
-\u{1F31F} *ROTATE VLESS NTLS* \u{1F31F}
-\`\`\`
-vless://${generateUUID4()}@${HOSTKU2}:80?path=${encodeURIComponent(path)}&security=none&encryption=none&host=${HOSTKU2}&fp=randomized&type=ws&sni=${HOSTKU2}#${encodedVlessLabelNTLS}
-\`\`\`
-\u{1F31F} *ROTATE TROJAN TLS* \u{1F31F}
-\`\`\`
-trojan://${generateUUID4()}@${HOSTKU2}:443?encryption=none&security=tls&sni=${HOSTKU2}&fp=randomized&type=ws&host=${HOSTKU2}&path=${encodeURIComponent(path)}#${encodedTrojanLabelTLS}
-\`\`\`
-\u{1F31F} *ROTATE SS TLS* \u{1F31F}
-\`\`\`
-ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:443?encryption=none&type=ws&host=${HOSTKU2}&path=${encodeURIComponent(path)}&security=tls&sni=${HOSTKU2}#${encodedSsLabelTLS}
-\`\`\`
-\u{1F31F} *ROTATE SS NTLS* \u{1F31F}
-\`\`\`
-ss://${toBase642(`none:${generateUUID4()}`)}@${HOSTKU2}:80?encryption=none&type=ws&host=${HOSTKU2}&path=${encodeURIComponent(path)}&security=none&sni=${HOSTKU2}#${encodedSsLabelNTLS}
+vless://${generateUUID()}@${HOSTKU}:443?encryption=none&security=tls&sni=${HOSTKU}&fp=randomized&type=ws&host=${HOSTKU}&path=${encodeURIComponent(path)}#${encodedVlessLabelTLS}
 \`\`\`
 
-\u{1F468}\u200D\u{1F4BB} Developer : [GEO PROJECT](https://t.me/sampiiiiu)
+*ROTATE VLESS ${countryCode.toUpperCase()} ${flagEmoji} NTLS*
+\`\`\`
+vless://${generateUUID()}@${HOSTKU}:80?path=${encodeURIComponent(path)}&security=none&encryption=none&host=${HOSTKU}&fp=randomized&type=ws&sni=${HOSTKU}#${encodedVlessLabelNTLS}
+\`\`\`
+
+*ROTATE TROJAN ${countryCode.toUpperCase()} ${flagEmoji} TLS*
+\`\`\`
+trojan://${generateUUID()}@${HOSTKU}:443?encryption=none&security=tls&sni=${HOSTKU}&fp=randomized&type=ws&host=${HOSTKU}&path=${encodeURIComponent(path)}#${encodedTrojanLabelTLS}
+\`\`\`
+
+*ROTATE SS ${countryCode.toUpperCase()} ${flagEmoji} TLS*
+\`\`\`
+ss://${toBase64(`none:${generateUUID()}`)}@${HOSTKU}:443?encryption=none&type=ws&host=${HOSTKU}&path=${encodeURIComponent(path)}&security=tls&sni=${HOSTKU}#${encodedSsLabelTLS}
+\`\`\`
+
+*ROTATE SS ${countryCode.toUpperCase()} ${flagEmoji} NTLS*
+\`\`\`
+ss://${toBase64(`none:${generateUUID()}`)}@${HOSTKU}:80?encryption=none&type=ws&host=${HOSTKU}&path=${encodeURIComponent(path)}&security=none&sni=${HOSTKU}#${encodedSsLabelNTLS}
+\`\`\`
+
+👨‍💻 Developer : [GEO PROJECT](https://t.me/sampiiiiu)
 `;
+    
     await this.sendMessage(chatId, configText, {
       parse_mode: "Markdown",
       ...options,
       reply_markup: {
-        inline_keyboard: [[backToMenuButton]]
+        inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
       }
     });
-    await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
+    
+    await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
+    
   } catch (error) {
-    console.error(error);
-    await this.sendMessage(chatId, `⚠️ An error occurred: ${error.message}`, { ...options,
-        reply_markup: {
-            inline_keyboard: [[backToMenuButton]]
-        }
+    console.error('Error in rotateconfig:', error);
+    await this.sendMessage(chatId, `⚠️ An error occurred: ${error.message}`, { 
+      ...options,
+      reply_markup: {
+        inline_keyboard: [[{ text: "⬅️ Back to Config", callback_data: "show_config_guide" }]]
+      }
     });
-    await this.deleteMessage(chatId, loadingMessage.result.message_id, options);
+    await this.deleteMessage(chatId, loadingMessage.message_id || loadingMessage.result?.message_id);
   }
 }
-
 // src/randomip/randomip.js
 let globalIpList = [];
 let globalCountryCodes = [];
@@ -2386,7 +2419,7 @@ function generateCountryIPsMessage(ipList, countryCode) {
 });
   
   // Tambahkan tombol di bawah pesan IP
-  msg += `\n\n_Pilih aksi di bawah:_`;
+  msg += `\n\n_GEO PROJECT_`;
   return msg;
 }
 async function handleRandomIpCommand(bot, chatId, options = {}) {
@@ -2397,7 +2430,7 @@ async function handleRandomIpCommand(bot, chatId, options = {}) {
       return;
     }
     globalCountryCodes = [...new Set(globalIpList.map((line) => line.split(",")[2]))].sort();
-    const text = "Silakan pilih negara untuk mendapatkan IP random:";
+    const text = "Please select a country to get a random IP:";
     const reply_markup = buildCountryButtons(0);
     await bot.sendMessage(chatId, text, {
       parse_mode: "Markdown",
@@ -2470,9 +2503,9 @@ const MENU_COMMANDS = [
     { text: "🔄 Rotate Config", callback_data: "menu_cmd_config" },
     { text: "🔗 Sub Link", callback_data: "menu_cmd_sublink" },
     // Page 2
-    { text: "🌐 Create IP Proxy", callback_data: "menu_cmd_proxy" },
-    { text: "📈 Usage Statistics", callback_data: "menu_cmd_stats" },
-    { text: "🔍 Find Proxy Tutorial", callback_data: "menu_cmd_findproxy" },
+    { text: "🌐 Get Proxy", callback_data: "menu_cmd_proxy" },
+    { text: "📈 Usage Stats", callback_data: "menu_cmd_stats" },
+    { text: "🔍 Find Proxy", callback_data: "menu_cmd_findproxy" },
     { text: "👥 Bot User List", callback_data: "menu_cmd_userlist" },
     { text: "📡 Ping Bot", callback_data: "menu_cmd_ping" },
     // Page 3
@@ -2480,7 +2513,7 @@ const MENU_COMMANDS = [
     { text: "➕ Add Wildcard", callback_data: "menu_cmd_add" },
     { text: "➖ Delete Wildcard", callback_data: "menu_cmd_del" },
     { text: "📝 List Wildcard", callback_data: "menu_cmd_listwildcard" },
-    { text: "📢 Broadcast Message", callback_data: "menu_cmd_broadcast" },
+    { text: "📢 Broadcast MSG", callback_data: "menu_cmd_broadcast" },
 ];
 
 function getMenuKeyboard(page = 0) {
@@ -2496,7 +2529,7 @@ function getMenuKeyboard(page = 0) {
     if (paginatedItems.length > 3) keyboard.push(paginatedItems.slice(3, 5));
 
     const navButtons = [];
-    if (page > 0) navButtons.push({ text: "⬅️ Previous", callback_data: `menu_page_${page - 1}` });
+    if (page > 0) navButtons.push({ text: "⬅️ Prev", callback_data: `menu_page_${page - 1}` });
     if (page < totalPages - 1) navButtons.push({ text: "Next ➡️", callback_data: `menu_page_${page + 1}` });
 
     if (navButtons.length > 0) keyboard.push(navButtons);
@@ -4768,6 +4801,10 @@ const SublinkBuilderBot = class {
    const state = sublinkState.get(chatId);
    await this.answerCallbackQuery(update.callback_query.id); 
    
+   if (data === "sublink_start_over") {
+    return this.start(chatId, messageId, options);
+   }
+
    if (!state || !data.startsWith("sublink_")) {
     return new Response("OK", { status: 200 });
    }
@@ -4892,7 +4929,7 @@ ${url}`;
       parse_mode: "HTML",
               reply_to_message_id: state.targetMessageId,
               reply_markup: {
-                  inline_keyboard: [[backToMenuButton]]
+                  inline_keyboard: [[{ text: "⬅️ Back to sublink", callback_data: "sublink_start_over" }]]
               },
       ...options
      });
@@ -4908,8 +4945,6 @@ Silakan coba lagi dengan parameter yang berbeda.`, {
             reply_to_message_id: state.targetMessageId,
       ...options
      });
-    } finally {
-     sublinkState.delete(chatId);
     }
    }
   }
@@ -5011,6 +5046,9 @@ Silakan coba lagi dengan parameter yang berbeda.`, {
   }
   if (options.reply_to_message_id) {
    formData.append("reply_to_message_id", String(options.reply_to_message_id));
+  }
+  if (options.reply_markup) {
+   formData.append("reply_markup", JSON.stringify(options.reply_markup));
   }
   const response = await fetch(`${this.apiUrl}/bot${this.token}/sendDocument`, {
    method: "POST",
