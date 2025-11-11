@@ -1173,15 +1173,15 @@ const Converterbot = class {
     const styles = {
       text: {
         icon: "📢",
-        title: "BROADCAST MESSAGE",
+        title: "Broadcast Message",
       },
       photo: {
         icon: "🖼️",
-        title: "GALLERY UPDATE",
+        title: "Gallery Update",
       },
       video: {
         icon: "🎥",
-        title: "VIDEO UPDATE",
+        title: "Video Update",
       }
     };
 
@@ -1196,16 +1196,16 @@ const Converterbot = class {
     const styles = {
       photo: {
         icon: "🖼️",
-        title: "GALLERY UPDATE",
+        title: "Gallery Update",
       },
       video: {
         icon: "🎬", 
-        title: "VIDEO UPDATE",
+        title: "Video Update",
       }
     };
     
     const style = styles[mediaType];
-    return `${style.color} ${style.icon} *${style.title}*\n\n${caption || '📝 No description'}\n\n┅┅┅┅┅┅┅┅┅┅┅┅\n_✨ Broadcast message from admin_`;
+    return `${style.icon} *${style.title}*\n\n${caption || '📝 No description'}\n\n┅┅┅┅┅┅┅┅┅┅┅┅\n_✨ Broadcast message from admin_`;
   }
 
   // Format user-friendly error message
@@ -2819,9 +2819,6 @@ _ GEO BOT SERVER Team_
                 url: "https://t.me/testikuy_mang" 
             }
         ],
-        [
-            backToMenuButton 
-        ]
     ]
 },
 reply_to_message_id: update.callback_query.message.message_id,
@@ -3112,9 +3109,6 @@ _ GEO BOT SERVER Team_
                 url: "https://t.me/testikuy_mang" 
             }
         ],
-        [
-            backToMenuButton
-        ]
     ]
 },
 reply_to_message_id: messageId,
